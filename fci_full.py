@@ -7,10 +7,10 @@ a diatom system with Full CI method.
 #-------------------------------------------
 import numpy
 from pyscf import gto, scf, ao2mo
-from opr_E import constructZ, getOrder, opr_E, math_C
+from opr_E import constructZ, opr_E, math_C
 
-R=1.1
-mol = gto.M(atom='H 0 0 0; H 0 0 '+str(R), basis='6-31g')
+R = 1.1
+mol = gto.M(atom='He 0 0 0; He 0 0 '+str(R), basis='6-31g')
 
 m = scf.RHF(mol)
 m.kernel()
@@ -63,32 +63,14 @@ print g_mtx[0,0,0,0]
 #print '################## k_mtx'
 #print k_mtx
 
-e_mtx = numpy.zeros([ns,ns])
-for i in range(ns):
-    for j in range(ns):
-        #energy of config i,j
-        orderi,orderj = getOrder(ne,no,i,Z),getOrder(ne,no,j,Z)
-        for p in range(no):
-            if orderi[p] == 1: e_mtx[i,j] += h_mtx[p,p]
-            if orderj[p] == 1: e_mtx[i,j] += h_mtx[p,p]
-        for p in range(no):
-            for q in range(p+1,no):
-                if orderi[p] and orderi[q]: e_mtx[i,j] += (g_mtx[p,p,q,q] - g_mtx[p,q,q,p])
-                if orderj[p] and orderj[q]: e_mtx[i,j] += (g_mtx[p,p,q,q] - g_mtx[p,q,q,p])
-        for p in range(no):
-            for q in range(no):
-                if orderi[p] and orderj[q]: e_mtx[i,j] += g_mtx[p,p,q,q]
-
-print 'energy mtx for states'
-print e_mtx
 ################################################################
 crt = 1e-9
 
 C0 = numpy.ones([ns,ns])
-#C0[1,0] , C0[0,1] , C0[1,1]= 0, 0, 0.4
-C0x = C0 ** 2
-A = sum(sum(C0x))
-C0 =  C0 / (A**0.5)
+#C0x = C0 ** 2
+#A = sum(sum(C0x))
+#C0 = C0 / (A**0.5)
+C0 = C0 / ns
 print 'C0'
 print C0
 
@@ -129,25 +111,23 @@ while 1:
             for p in range(no):
                 for q in range(no):
                     for ka in range(ns):
-                        sig2[ia,ib] += opr_E(ne,no,p,q,ia,ka,Z)*G[p,q,ka,ib]
+                        sig2[ia,ib] += opr_E(ne,no,p,q,ia,ka,Z) * G[p,q,ka,ib]
                     for kb in range(ns):
-                        sig2[ia,ib] += opr_E(ne,no,p,q,ib,kb,Z)*G[p,q,ia,kb]
+                        sig2[ia,ib] += opr_E(ne,no,p,q,ib,kb,Z) * G[p,q,ia,kb]
 
     sig1 = numpy.zeros([ns,ns])
     for ia in range(ns):
         for ib in range(ns):
             for p in range(no):
                 for q in range(no):
-                    sig1[ia,ib] += k_mtx[p,q]*D[p,q,ia,ib]
+                    sig1[ia,ib] += k_mtx[p,q] * D[p,q,ia,ib]
 
     sig = numpy.zeros([ns,ns])
     sig = sig1 + sig2
 #    print 'sig'
 #    print sig
-#    print sigx
-#    print A
 
-#####################################################################################
+    #####################################################################################
     cdav = - (1 - E0)**(-1) * (sig - E0 * C0)
     C1 = C0 + cdav
     print 'Cnew  ===================='
@@ -176,10 +156,5 @@ while 1:
     else:
         break
 ######################################################################################
-a = 1.889726133
-Ra = R*a #angstrom
-nre = 1/Ra
-print 'nre'
-print nre
 print 'groundstate energy'
-print E1+nre
+print E1 + mol.energy_nuc()

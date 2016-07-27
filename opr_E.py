@@ -2,67 +2,63 @@ import numpy
 import operator  
 
 def math_C(n,k):  
-        return  reduce(operator.mul, range(n - k + 1, n + 1)) /reduce(operator.mul, range(1, k +1))  
+        return reduce(operator.mul, range(n - k + 1, n + 1)) /reduce(operator.mul, range(1, k +1))  
 
-def getOrder(ne,no,l,Z):
+def getOccu(ne,no,l,Z):
+    #-------------
+    # Explanation: shavitt map
+    # 1 - 1 - 1 - 1 ne+1
+    # |   |   |   |
+    # 1 - 2 - 3 - 4
+    # |   |   |   |
+    # 1 - 3 - 6 - 10*
+    # no-ne+1
+    #--------------
     pi, pj = no-ne, ne
-    order = numpy.zeros(no)
-    for i in range(no):
-        if pi == 0:
+    occu = numpy.zeros(no)
+    for i in xrange(no):
+        if pi == 0: # at top line
             pj -= 1
-            order[no-1-i] = 1
+            occu[no-1-i] = 1
 
         else:
             if l >= Z[pi-1,pj]:
                 l -= Z[pi-1,pj]
-                order[no-1-i] = 1
-                pj -= 1
+                occu[no-1-i] = 1
+                pj -= 1 # move left
             else:
-                pi -= 1
+                pi -= 1 # move up
         #print pi, ',', pj, 'l=', l
-    return order
+    return occu
 
-
-def opr_E(ne,no,r,s,k,l,Z):
-    pi, pj = no-ne, ne
-    order = numpy.zeros(no)
-    for i in range(no):
-        if pi == 0:
-            pj -= 1
-            order[no-1-i] = 1
-
-        else:
-            if l >= Z[pi-1,pj]:
-                l -= Z[pi-1,pj]
-                order[no-1-i] = 1
-                pj -= 1
-            else:
-                pi -= 1
-        #print pi, ',', pj, 'l=', l
-    #print order
-    
-    #Ers = ar+ . as
-    if order[s] == 0:
-        return 0
-    elif order[l] == 1 and s != l:
-        return 0
-    else:
-        order[s] = 0
-        order[r] = 1
-    #print order
-
+def getOrder(ne,no,occu,Z):
     c = 0
     pi, pj = 0, 0
-    for i in order:
+    for i in occu:
         if i == 1:
-            pj += 1
+            pj += 1 # move right
             if pi > 0:
                 c += Z[pi-1,pj]
         else:
-            pi += 1
+            pi += 1 # move down
         #print pi, ',', pj, 'c=', c
-    #print c
+    return c
 
+
+def opr_E(ne,no,r,s,k,l,Z):
+    occu = getOccu(ne,no,l,Z) 
+    #Ers = ar+ . as
+    if occu[s] == 0:
+        return 0
+    else:
+        occu[s] = 0    
+    if occu[r] == 1:
+        return 0
+    else:
+        occu[r] = 1
+    #print occu
+
+    c = getOrder(ne,no,occu,Z)
     if c == k:
         return 1
     else:
@@ -72,8 +68,8 @@ def opr_E(ne,no,r,s,k,l,Z):
 def constructZ(ne,no):
     Z = numpy.ones([no-ne+1,ne+1])
     #Full CI
-    for i in range(1,no-ne+1):
-        for j in range(1,ne+1):
+    for i in xrange(1,no-ne+1):
+        for j in xrange(1,ne+1):
             Z[i,j] = Z[i-1,j] + Z[i,j-1]
     return Z
 
