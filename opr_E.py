@@ -44,7 +44,7 @@ def opr_E(ne,no,r,s,k,l,Z):
     #Ers = ar+ . as
     if order[s] == 0:
         return 0
-    elif order[l] == 1 and s != l:
+    elif order[r] == 1 and s != r:
         return 0
     else:
         order[s] = 0

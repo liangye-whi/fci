@@ -10,7 +10,7 @@ from pyscf import gto, scf, ao2mo
 from opr_E import constructZ, getOrder, opr_E, math_C
 
 R=1.1
-mol = gto.M(atom='H 0 0 0; H 0 0 '+str(R), basis='6-31g')
+mol = gto.M(atom='He 0 0 0; He 0 0 '+str(R), basis='6-31g')
 
 m = scf.RHF(mol)
 m.kernel()
@@ -141,10 +141,7 @@ while 1:
     else:
         break
 ######################################################################################
-a = 1.889726133
-Ra = R*a #angstrom
-nre = 1/Ra
-print 'nre'
+nre = mol.energy_nuc()
 print nre
 print 'groundstate energy'
 print E1+nre
