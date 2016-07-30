@@ -1,7 +1,7 @@
 '''
 
 This is a program calculating the ground state energy of 
-a small system with Full CI method.
+a small system with Full CI method with MOC method.
 
 Published Edtion.
 
@@ -12,7 +12,7 @@ by Ye @ 26JUL2016.
 
 import numpy
 from pyscf import gto, scf, ao2mo
-from opr_E import constructZ, opr_E, math_C
+from opr import constructZ, opr_E, opr_EE, math_C
 
 def FCI(mol):
     m = scf.RHF(mol)

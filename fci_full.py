@@ -10,7 +10,7 @@ from pyscf import gto, scf, ao2mo
 from opr_E import constructZ, opr_E, math_C
 
 R = 1.1
-mol = gto.M(atom='He 0 0 0; He 0 0 '+str(R), basis='6-31g')
+mol = gto.M(atom='H 0 0 0; H 0 0 '+str(R), basis='6-31g')
 
 m = scf.RHF(mol)
 m.kernel()
@@ -128,33 +128,41 @@ while 1:
 #    print sig
 
     #####################################################################################
+    E0 = sum(sum(C0 * sig))
     cdav = - (1 - E0)**(-1) * (sig - E0 * C0)
+    res = sum(sum(cdav**2))
+    print 'new iter =============='
+    print 'E =', E0
+    print '|res| =', res
+    if res < crt:
+        print 'Iteration Converged.'
+        break
     C1 = C0 + cdav
-    print 'Cnew  ===================='
+    print 'Cnew'
 #    print C1
     C1x = C1 ** 2
     A = sum(sum(C1x))
 #    print 'normalization factor = ', A
-    C1 =  C1 / (A**0.5)
-    print C1
+    C0 =  C1 / (A**0.5)
+    print C0
 #    C1x = C1 ** 2
 #    A = sum(sum(C1x))
 #    print 'normalization factor =', A
     
-    E1 = sum(sum(C1 * sig))
+#    E1 = sum(sum(C1 * sig))
 #    E = sum(sum((C1**2) * e_mtx))
-    print ' E =', E1
-    if E0 == 0:
-        E0 = E1
-        C0 = C1
-        continue
+#    print ' E =', E1
+#    if E0 == 0:
+#        E0 = E1
+#        C0 = C1
+#        continue
 
-    print 'dE =', E0-E1
-    if abs(E1-E0) > crt:
-        E0 = E1
-        C0 = C1
-    else:
-        break
+#    print 'dE =', E0-E1
+#    if abs(E1-E0) > crt:
+#        E0 = E1
+#        C0 = C1
+#    else:
+#        break
 ######################################################################################
 print 'groundstate energy'
-print E1 + mol.energy_nuc()
+print E0 + mol.energy_nuc()

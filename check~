@@ -8,10 +8,6 @@ test2
 E(FCI) = -1.111269878413
 crt=1e-12 fci_NR.py //E modified.
 E(FCI) = -1.111269880052
-crt=1e-12 fci_NR.py //(res**2**0.5) Iter=137 wasted.
-E(FCI) = -1.111269880064
-crt=1e-9 fci_NR.py //(res**2**0.5) Iter=101 wasted.
-E(FCI) = -1.111269880064
 
 ==========================
 H2 ccpvdz
@@ -24,6 +20,6 @@ E(FCI) = -3.191343197476
 He2 6-31G
 Benchmark
 E(FCI) = -5.633464683353
-crt=1e-12 fci_NR.py //E modified. Iter=137
+crt=1e-12 fci_NR.py //E modified.
 E(FCI) = -5.672662691224
 
