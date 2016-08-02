@@ -12,7 +12,8 @@ by Ye @ 26JUL2016.
 
 import numpy
 from pyscf import gto, scf, ao2mo
-from opr_E import constructZ, opr_E, math_C
+from opr import constructZ, formOccu, math_C
+from HC_MOC2 import HC
 
 def FCI(mol):
     m = scf.RHF(mol)
@@ -42,7 +43,8 @@ def FCI(mol):
 
     g_mtx = ao2mo.kernel(mol, m.mo_coeff, compact=False)
     print 'g matrix'
-    print g_mtx[0,0]
+    print g_mtx[0,0] # g[p,q,r,s] => g[p*no+q,r*no+s]
+
 
     k_mtx = numpy.zeros([no,no])
     for i in xrange(no):
@@ -54,10 +56,10 @@ def FCI(mol):
 
     #---------------------------------------------------------
 
-    #===criterion of convergence===
-    crt = 1e-9
-    #==============================
+    occu = formOccu(ne,no,ns,Z)
 
+    #---------------------------------------------------------
+    
     C0 = numpy.ones([ns,ns])
     #C0x = C0 ** 2
     #A = sum(sum(C0x))
@@ -67,57 +69,21 @@ def FCI(mol):
     print C0
 
     E0 = 0
-    iter_num = 0;
-
+    #===criterion of convergence===
+    crt = 1e-9
+    #==============================
+    iter_num = 0
+    iter_limit = 1000
     ######################################################################
-
-    while 1:
+    print 'Now start iteration...'
+    while iter_num < iter_limit:
+        # Davidson step
         iter_num += 1
-        D = numpy.zeros([no,no,ns,ns])
-        for r in xrange(no):
-            for s in xrange(no):
-                for k in xrange(ns):
-                    for j in xrange(ns):
-    #                    print opr_E(ne,no,r,s,kb,jb,Z) 
-                        D[r,s,:,k] += opr_E(ne,no,r,s,k,j,Z) * C0[:,j] 
-                        D[r,s,k,:] += opr_E(ne,no,r,s,k,j,Z) * C0[j,:]
-    #            print 'D(',r,',',s,') matrix'
-    #            print D[r,s,:,:]
-
-        G = numpy.zeros([no,no,ns,ns])
-        for p in xrange(no):
-            for q in xrange(no):
-                for r in xrange(no):
-                    for s in xrange(no):
-                        G[p,q,:,:] += 0.5 * g_mtx[p*no+q,r*no+s] * D[r,s,:,:]
-    #            print 'G(',p,',',q,') matrix'
-    #            print G[p,q,:,:]
-
-        sig2 = numpy.zeros([ns,ns])
-        for ia in range(ns):
-            for ib in range(ns):
-                for p in range(no):
-                    for q in range(no):
-                        for ka in range(ns):
-                            sig2[ia,ib] += opr_E(ne,no,p,q,ia,ka,Z) * G[p,q,ka,ib]
-                        for kb in range(ns):
-                            sig2[ia,ib] += opr_E(ne,no,p,q,ib,kb,Z) * G[p,q,ia,kb]
-
-        sig1 = numpy.zeros([ns,ns])
-        for ia in range(ns):
-            for ib in range(ns):
-                for p in range(no):
-                    for q in range(no):
-                        sig1[ia,ib] += k_mtx[p,q] * D[p,q,ia,ib]
-
-        sig = numpy.zeros([ns,ns])
-        sig = sig1 + sig2
+        ##  ***  ##
+        sig = HC(C0, k_mtx, g_mtx, ne, no, ns, Z, occu)
     #    print 'sig'
     #    print sig
 
-        #####################################################################################
-
-        # Davidson step
         E1 = E0
         E0 = sum(sum(C0 * sig))
         cdav = - (1 - E0)**(-1) * (sig - E0 * C0)
@@ -140,7 +106,9 @@ def FCI(mol):
     #    C1x = C1 ** 2
     #    A = sum(sum(C1x))
     #    print 'normalization factor =', A
-        
+    else:
+        print 'Iteration Max (',iter_limit,'). Unconverged.'
+
     #End of while 1
     #-----------------------------------------------------------------------
     return E0
