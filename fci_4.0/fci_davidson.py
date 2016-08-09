@@ -13,9 +13,13 @@ by Ye @ 26JUL2016.
 import numpy
 from pyscf import gto, scf, ao2mo
 from opr import constructZ, formOccu, math_C
-from HC_MOC2 import HC
+from HC_MOC import HC
+import time
+
+import pdb
 
 def FCI(mol):
+    start_time = time.time()
     m = scf.RHF(mol)
     m.kernel()
 
@@ -54,21 +58,42 @@ def FCI(mol):
             k_mtx[i,j] *= 0.5
     k_mtx = k_mtx + h_mtx
 
+
     #---------------------------------------------------------
 
     occu = formOccu(ne,no,ns,Z)
 
     #---------------------------------------------------------
+    HD = numpy.zeros(ns*ns)
+    for i in xrange(ns*ns):
+        Ca = numpy.matrix(numpy.zeros(ns*ns)).T
+        Ca[i] = 1.0
+        siga = HC(Ca, k_mtx, g_mtx, ne, no, ns, Z, occu)
+        HD[i] = siga[i,0]
+        #Hd[0,0] +=  1e-3
+    #---------------------------------------------------------
+    L = 1           #number of initial guess basis vectors
+    K = 0           #ground state
+    B = numpy.matrix(numpy.eye(ns*ns,L))
+    I = numpy.matrix(numpy.eye(ns*ns))
+    AB = numpy.matrix(HC(B, k_mtx, g_mtx, ne, no, ns, Z, occu))
+    print AB.shape
+    print AB
+    A = B.T * AB
+    A = (A + A.T) / 2.
+    A[0,0] += A[0,0]*0.01
     
-    C0 = numpy.ones([ns,ns])
-    #C0x = C0 ** 2
-    #A = sum(sum(C0x))
-    #C0 =  C0 / (A**0.5)
-    C0 =  C0 / ns
-    print 'C0'
-    print C0
+    dt = numpy.matrix(I)
+    for i in xrange(L):
+        dt = dt - B[:,i] * B[:,i].T
 
-    E0 = 0
+    e, c = numpy.linalg.eigh(A)
+    idx = e.argsort()[K]
+    ek = e[idx]
+    ck = c[:,idx]
+    print 'E =',ek
+    print ck
+    
     #===criterion of convergence===
     crt = 1e-9
     #==============================
@@ -76,40 +101,41 @@ def FCI(mol):
     iter_limit = 10000
     ######################################################################
     print 'Now start iteration...'
-    while iter_num < iter_limit:
-        # Davidson step
-        iter_num += 1
-        ##  ***  ##
-        sig = HC(C0, k_mtx, g_mtx, ne, no, ns, Z, occu)
-    #    print 'sig'
-    #    print sig
-
-        E1 = E0
-        E0 = sum(sum(C0 * sig))
-#        cdav = - (abs(1 - E0))**(-1) * (sig - E0 * C0)
-        cdav = - (1 - E0)**(-1) * (sig - E0 * C0)
-        res = sum(sum(cdav**2))**.5
-        print 'Iter ',iter_num, '=============='
-        print 'E =', E0
-        print 'dE =', E0 - E1
-        print '|res| =', res
-        if res < crt:
+    start_davidson = time.time()
+    for M in xrange(L, iter_limit):
+        q = (AB - ek * B) * ck
+        #D.
+        epsi = numpy.matrix(numpy.diag((ek - HD) ** (-1))) * q
+        #E.
+        d = dt * epsi
+        res = numpy.linalg.norm(d)
+        print 'res =', res
+        if res < crt: 
             print 'Iteration Converged.'
             break
 
-        print 'Cnew'
-        C0 = C0 + cdav
-        # normalization
-        A = sum(sum(C0**2))
-    #    print 'normalization factor = ', A
-        C0 =  C0 / (A**0.5)
-        print C0
-    #    C1x = C1 ** 2
-    #    A = sum(sum(C1x))
-    #    print 'normalization factor =', A
+        b = d / res
+        #F.
+        B = numpy.c_[B,b]
+        #G.
+        AB = numpy.c_[AB, HC(b, k_mtx, g_mtx, ne, no, ns, Z, occu)]
+        #H.
+        a = B.T * AB[:,M]
+        A = numpy.c_[A,a[:M,0]]
+        A = numpy.r_[A,a.T]
+        print A.shape
+        dt = dt - b * b.T
+
+        e, c = numpy.linalg.eigh(A)
+        idx = e.argsort()[K]
+        ek = e[idx]
+        ck = c[:,idx]
+        print 'E =',ek
+
     else:
         print 'Iteration Max (',iter_limit,'). Unconverged.'
-
+    end_davidson = time.time()
+    print 'Davidson time =', end_davidson - start_davidson, 'seconds.'
     #End of while 1
     #-----------------------------------------------------------------------
-    return E0
+    return ek

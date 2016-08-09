@@ -15,7 +15,7 @@ def formOccu(ne,no,ns,Z):
     # 1 - 3 - 6 - 10*
     # no-ne+1
     #--------------
-    occu = [[0]*ns,{}]
+    occu = [[0.]*ns,{},[[]]*ns,[[]]*ns]
     for l in xrange(ns):
         pi, pj = no-ne, ne
         cu = 0
@@ -43,6 +43,10 @@ def formOccu(ne,no,ns,Z):
         #print int(res,2)
         occu[1][str(occu[0][l])] = l # occu to index
         #print res
+        occu[2][l] = [x for x in xrange(no) if res[x] == '1'] # res string
+
+        occu[3][l] = [x for x in xrange(no) if res[x] == '0'] # res string
+        assert len(res) == no
         assert sum([int(i) for i in res if i == '1']) == ne ##debug##
     #print occu
     return occu
@@ -55,10 +59,10 @@ def constructZ(ne,no):
             Z[i,j] = Z[i-1,j] + Z[i,j-1]
     return Z
 
-def sign(res,p,q):
+def sign(ocu,p,q):
     # even +1; odd -1
-    kp = 1 - sum([int(i) for i in res[:p] if i=='1'])%2*2
-    kq = 1 - sum([int(i) for i in res[:q] if i=='1'])%2*2
+    kp = 1 - len([1 for i in ocu if i<p])%2*2
+    kq = 1 - len([1 for i in ocu if i<q])%2*2
     k = kp * kq
     if p > q:
         return k

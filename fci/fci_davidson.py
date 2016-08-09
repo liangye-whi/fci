@@ -19,12 +19,12 @@ def FCI(mol):
     m = scf.RHF(mol)
     m.kernel()
 
-    print 'mo_coeff'
-    print(m.mo_coeff)
-    print 'mo_occ'
-    print(m.mo_occ)
-    print 'mo_energy'
-    print(m.mo_energy)
+    #print 'mo_coeff'
+    #print(m.mo_coeff)
+    #print 'mo_occ'
+    #print(m.mo_occ)
+    #print 'mo_energy'
+    #print(m.mo_energy)
 
     ne = mol.nelectron/2 #electron per string
     no = len(m.mo_energy)
@@ -32,18 +32,18 @@ def FCI(mol):
     Z = constructZ(ne,no)
     #print 'Z'
     #print Z
-    print 'ne =', ne, 'no =', no, 'ns =', ns
+    #print 'ne =', ne, 'no =', no, 'ns =', ns
 
     ###########################################################
 
     h_ao_mtx = scf.hf.get_hcore(mol)
     h_mtx = numpy.dot(numpy.dot(m.mo_coeff.T,h_ao_mtx),m.mo_coeff)
-    print 'h matrix'
-    print h_mtx
+    #print 'h matrix'
+    #print h_mtx
 
     g_mtx = ao2mo.kernel(mol, m.mo_coeff, compact=False)
-    print 'g matrix'
-    print g_mtx[0,0] # g[p,q,r,s] => g[p*no+q,r*no+s]
+    #print 'g matrix'
+    #print g_mtx[0,0] # g[p,q,r,s] => g[p*no+q,r*no+s]
 
 
     k_mtx = numpy.zeros([no,no])
@@ -65,8 +65,8 @@ def FCI(mol):
     #A = sum(sum(C0x))
     #C0 =  C0 / (A**0.5)
     C0 =  C0 / ns
-    print 'C0'
-    print C0
+    #print 'C0'
+    #print C0
 
     E0 = 0
     #===criterion of convergence===
@@ -86,7 +86,6 @@ def FCI(mol):
 
         E1 = E0
         E0 = sum(sum(C0 * sig))
-#        cdav = - (abs(1 - E0))**(-1) * (sig - E0 * C0)
         cdav = - (1 - E0)**(-1) * (sig - E0 * C0)
         res = sum(sum(cdav**2))**.5
         print 'Iter ',iter_num, '=============='
@@ -97,13 +96,13 @@ def FCI(mol):
             print 'Iteration Converged.'
             break
 
-        print 'Cnew'
+    #    print 'Cnew'
         C0 = C0 + cdav
         # normalization
         A = sum(sum(C0**2))
     #    print 'normalization factor = ', A
         C0 =  C0 / (A**0.5)
-        print C0
+    #    print C0
     #    C1x = C1 ** 2
     #    A = sum(sum(C1x))
     #    print 'normalization factor =', A

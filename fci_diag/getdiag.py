@@ -1,5 +1,5 @@
 from pyscf import gto, scf, fci
-from fci_davidson import FCI
+from fci_getdiag import FCI
 
 R = 1.1
 mol = gto.Mole()
@@ -11,7 +11,7 @@ mol.build(
 
 print 'My FCI'
 print('E(FCI) = %.12f' % (FCI(mol) + mol.energy_nuc()))
-
+#print FCI(mol)
 print 'Benchmark'
 myhf = scf.RHF(mol)
 myhf.kernel()

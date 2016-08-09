@@ -57,14 +57,16 @@ def constructZ(ne,no):
 
 def sign(res,p,q):
     # even +1; odd -1
-    kp = 1 - sum([int(i) for i in res[:p] if i=='1'])%2*2
-    kq = 1 - sum([int(i) for i in res[:q] if i=='1'])%2*2
-    k = kp * kq
+    kp = 1 - (int(bin(sum([int(i) for i in res[:p] if i=='1']))[-1]) << 1)
+    kq = 1 - (int(bin(sum([int(i) for i in res[:q] if i=='1']))[-1]) << 1)
     if p > q:
-        return k
+        return kp * kq
     elif p < q:
-        return -k
+        return kp * kq * (-1)
     else:
+        print res
+        print 'p,q=',p,q
+        print 'error'
         assert 0
         return 1
 

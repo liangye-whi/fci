@@ -15,6 +15,8 @@ from pyscf import gto, scf, ao2mo
 from opr import constructZ, formOccu, math_C
 from HC_MOC2 import HC
 
+import pdb
+
 def FCI(mol):
     m = scf.RHF(mol)
     m.kernel()
@@ -60,15 +62,28 @@ def FCI(mol):
 
     #---------------------------------------------------------
     
-    C0 = numpy.ones([ns,ns])
-    #C0x = C0 ** 2
-    #A = sum(sum(C0x))
-    #C0 =  C0 / (A**0.5)
-    C0 =  C0 / ns
+    C0 = numpy.zeros([ns,ns])
+    C0[0,0] = 1.
+    #C0 =  C0 / ns
     print 'C0'
     print C0
-
-    E0 = 0
+    sig = HC(C0, k_mtx, g_mtx, ne, no, ns, Z, occu)
+    E0 = sum(sum(C0 * sig))
+    print 'E0'
+    print E0
+    
+    Hd = numpy.zeros([ns,ns])
+    for i in xrange(ns):
+        print i
+        for j in xrange(ns):
+            Ca = numpy.zeros([ns,ns])
+            Ca[i,j] = 1.0
+            siga = HC(Ca, k_mtx, g_mtx, ne, no, ns, Z, occu)
+            Ea = siga[i,j]
+            Hd[i,j] = Ea 
+        Hd[0,0] +=  abs(Hd[0,0]) * 1e-2
+    #print Hd
+    #pdb.set_trace()
     #===criterion of convergence===
     crt = 1e-9
     #==============================
@@ -79,37 +94,29 @@ def FCI(mol):
     while iter_num < iter_limit:
         # Davidson step
         iter_num += 1
-        ##  ***  ##
-        sig = HC(C0, k_mtx, g_mtx, ne, no, ns, Z, occu)
-    #    print 'sig'
-    #    print sig
 
-        E1 = E0
-        E0 = sum(sum(C0 * sig))
-#        cdav = - (abs(1 - E0))**(-1) * (sig - E0 * C0)
-        cdav = - (1 - E0)**(-1) * (sig - E0 * C0)
+        cdav = - (Hd - E0)**(-1) * (sig - E0 * C0)
         res = sum(sum(cdav**2))**.5
-        print 'Iter ',iter_num, '=============='
-        print 'E =', E0
-        print 'dE =', E0 - E1
-        print '|res| =', res
-        if res < crt:
-            print 'Iteration Converged.'
-            break
-
-        print 'Cnew'
         C0 = C0 + cdav
         # normalization
         A = sum(sum(C0**2))
     #    print 'normalization factor = ', A
         C0 =  C0 / (A**0.5)
+        sig = HC(C0, k_mtx, g_mtx, ne, no, ns, Z, occu)
+        E1 = sum(sum(C0 * sig))
+        dE = E1 - E0
+        E0 = E1
+        print 'Iter ',iter_num, '=============='
+        print 'E =', E0
+        print 'dE =', dE
+        print '|res| =', res
+        print 'Cnew'
         print C0
-    #    C1x = C1 ** 2
-    #    A = sum(sum(C1x))
-    #    print 'normalization factor =', A
+        if res < crt:
+            print 'Iteration Converged.'
+            break
     else:
         print 'Iteration Max (',iter_limit,'). Unconverged.'
-
     #End of while 1
     #-----------------------------------------------------------------------
     return E0
