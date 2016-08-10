@@ -4,7 +4,8 @@ import operator
 def math_C(n,k):  
         return reduce(operator.mul, range(n - k + 1, n + 1)) /reduce(operator.mul, range(1, k +1))  
 
-def getOccu(ne,no,l,Z):
+def formOccu(ne,no,ns,Z):
+	# Build the complete dictionary for index to occupation
     #-------------
     # Explanation: shavitt map
     # 1 - 1 - 1 - 1 ne+1
@@ -14,103 +15,37 @@ def getOccu(ne,no,l,Z):
     # 1 - 3 - 6 - 10*
     # no-ne+1
     #--------------
-    pi, pj = no-ne, ne
-    occu = numpy.zeros(no)
-    for i in xrange(no):
-        if pi == 0: # at top line
-            pj -= 1
-            occu[no-1-i] = 1
+    occu = [[0]*ns,{}]
+    for l in xrange(ns):
+        pi, pj = no-ne, ne
+        cu = 0
+        ll = l
+        #print ll
+        for i in xrange(no):
+            if pi == 0: # at top line
+                cu = cu << 1
+                cu += 1
+                pj -= 1
 
-        else:
-            if l >= Z[pi-1,pj]:
-                l -= Z[pi-1,pj]
-                occu[no-1-i] = 1
-                pj -= 1 # move left
             else:
-                pi -= 1 # move up
-        #print pi, ',', pj, 'l=', l
+                if ll >= Z[pi-1,pj]:
+                    ll -= Z[pi-1,pj]
+                    cu = cu << 1
+                    cu += 1
+                    pj -= 1 # move left
+                else:
+                    cu = cu << 1
+                    pi -= 1 # move up
+            #print pi, ',', pj, 'll=', ll
+        res = bin(cu)[:1:-1]
+        for i in xrange(no-len(res)): res+='0'
+        occu[0][l] = int(res,2) # index to occu, e.g. 19 = 0b10011
+        #print int(res,2)
+        occu[1][str(occu[0][l])] = l # occu to index
+        #print res
+        assert sum([int(i) for i in res if i == '1']) == ne ##debug##
+    #print occu
     return occu
-
-def getOrder(occu,Z):
-    c = 0
-    pi, pj = 0, 0
-    for i in occu:
-        if i == 1:
-            pj += 1 # move right
-            if pi > 0:
-                c += Z[pi-1,pj]
-        else:
-            pi += 1 # move down
-        #print pi, ',', pj, 'c=', c
-    return c
-
-
-def opr_E(ne,no,r,s,k,l,Z):
-    occu = getOccu(ne,no,l,Z) 
-    #Ers = ar+ . as
-    if occu[s] == 0:
-        return 0
-    else:
-        occu[s] = 0    
-    if occu[r] == 1:
-        return 0
-    else:
-        occu[r] = 1
-    #print occu
-
-    c = getOrder(occu,Z)
-    if c == k:
-        return 1
-    else:
-        return 0
-
-def getStr(ne,no,l,Z):
-    spstr = numpy.zeros(ne)
-    pi, pj = no-ne, ne
-    ei = ne - 1
-    for i in xrange(no):
-        if pi == 0: # at top line
-            pj -= 1
-            spstr[ei] = no - 1 - i
-            ei -= 1
-        else:
-            if l >= Z[pi-1,pj]:
-                l -= Z[pi-1,pj]
-                occu[no-1-i] = 1
-                spstr[ei] = no - 1 - i
-                ei -= 1
-                pj -= 1 # move left
-            else:
-                pi -= 1 # move up
-    return spstr
-
-def opr_EE(ne,no,p,q,r,s,k,l,Z):
-    occu = getOccu(ne,no,l,Z) 
-    #Ers = ar+ . as
-    if occu[s] == 0:
-        return 0
-    else:
-        occu[s] = 0    
-    if occu[r] == 1:
-        return 0
-    else:
-        occu[r] = 1
-
-    if occu[q] == 0:
-        return 0
-    else:
-        occu[q] = 0    
-    if occu[p] == 1:
-        return 0
-    else:
-        occu[p] = 1
-    #print occu
-
-    c = getOrder(occu,Z)
-    if c == k:
-        return 1
-    else:
-        return 0
 
 def constructZ(ne,no):
     Z = numpy.ones([no-ne+1,ne+1])
@@ -120,15 +55,16 @@ def constructZ(ne,no):
             Z[i,j] = Z[i-1,j] + Z[i,j-1]
     return Z
 
-def constructE(ne,no,ns):
-    Z = constructZ(ne,no)
-    E = numpy.zeros([ns,ns])
-    for i in xrange(ns):
-        for j in xrange(ns):
-            E(i,j)
+def sign(res,p,q):
+    # even +1; odd -1
+    kp = 1 - sum([int(i) for i in res[:p] if i=='1'])%2*2
+    kq = 1 - sum([int(i) for i in res[:q] if i=='1'])%2*2
+    k = kp * kq
+    if p > q:
+        return k
+    elif p < q:
+        return -k
+    else:
+        assert 0
+        return 1
 
-if __name__ =='__main__':
-    Z = constructZ(1,2)
-    print Z
-    print opr_E(1,2,0,0,0,0,Z)
-    
