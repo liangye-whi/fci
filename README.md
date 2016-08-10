@@ -4,9 +4,9 @@ Full-CI programming
 version 4.1
 -----------
 
-### New Feature
+### New Features
 
-### Bug
+### Bugs
 
-- Still cannot run properly. Modification see 4.1
+- Still cannot run properly. Modification see 4.1.
 
