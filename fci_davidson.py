@@ -13,7 +13,7 @@ by Ye @ 26JUL2016.
 import numpy
 from pyscf import gto, scf, ao2mo
 from opr import constructZ, formOccu, math_C
-from HC_MOC import HC
+from HC_MOC2 import HC
 import time
 
 import pdb
