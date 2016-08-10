@@ -5,7 +5,7 @@ R = 1.1
 mol = gto.Mole()
 mol.build(
         atom = 'He 0 0 0; He 0 0 '+str(R), 
-        basis = 'cc-pvdz',
+        basis = '6-31g',
         symmetry = True,
         )
 
