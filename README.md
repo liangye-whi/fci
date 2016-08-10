@@ -1,7 +1,7 @@
 Full-CI programming
 =====================
 
-version 4.1
+Version 4.1
 -----------
 
 #### New Features
