@@ -31,7 +31,7 @@ def getOccu(ne,no,l,Z):
         #print pi, ',', pj, 'l=', l
     return occu
 
-def getOrder(occu,Z):
+def getOrder(ne,no,occu,Z):
     c = 0
     pi, pj = 0, 0
     for i in occu:
@@ -58,59 +58,12 @@ def opr_E(ne,no,r,s,k,l,Z):
         occu[r] = 1
     #print occu
 
-    c = getOrder(occu,Z)
+    c = getOrder(ne,no,occu,Z)
     if c == k:
         return 1
     else:
         return 0
 
-def getStr(ne,no,l,Z):
-    spstr = numpy.zeros(ne)
-    pi, pj = no-ne, ne
-    ei = ne - 1
-    for i in xrange(no):
-        if pi == 0: # at top line
-            pj -= 1
-            spstr[ei] = no - 1 - i
-            ei -= 1
-        else:
-            if l >= Z[pi-1,pj]:
-                l -= Z[pi-1,pj]
-                occu[no-1-i] = 1
-                spstr[ei] = no - 1 - i
-                ei -= 1
-                pj -= 1 # move left
-            else:
-                pi -= 1 # move up
-    return spstr
-
-def opr_EE(ne,no,p,q,r,s,k,l,Z):
-    occu = getOccu(ne,no,l,Z) 
-    #Ers = ar+ . as
-    if occu[s] == 0:
-        return 0
-    else:
-        occu[s] = 0    
-    if occu[r] == 1:
-        return 0
-    else:
-        occu[r] = 1
-
-    if occu[q] == 0:
-        return 0
-    else:
-        occu[q] = 0    
-    if occu[p] == 1:
-        return 0
-    else:
-        occu[p] = 1
-    #print occu
-
-    c = getOrder(occu,Z)
-    if c == k:
-        return 1
-    else:
-        return 0
 
 def constructZ(ne,no):
     Z = numpy.ones([no-ne+1,ne+1])
@@ -119,13 +72,6 @@ def constructZ(ne,no):
         for j in xrange(1,ne+1):
             Z[i,j] = Z[i-1,j] + Z[i,j-1]
     return Z
-
-def constructE(ne,no,ns):
-    Z = constructZ(ne,no)
-    E = numpy.zeros([ns,ns])
-    for i in xrange(ns):
-        for j in xrange(ns):
-            E(i,j)
 
 if __name__ =='__main__':
     Z = constructZ(1,2)

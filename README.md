@@ -1,16 +1,38 @@
 Full-CI programming
 =====================
 
-1. Using the N-resolution method will obtain the result with great error. For example, the result of H2 1.1 ccpvdz:
+Version 1.1
+-----------
 
-        H2 ccpvdz
-        E(FCI) = -3.191343197476
-        Benchmark
-        E(FCI) = -1.123735236610
-    miserably.
+#### New Features
 
-2. The algorithm of N-resolution itself is rather low.
+- Simplified Davidson.
 
-3. Try to use the Minimal Operation-Count Method to rewrite.
+- N-resolution works. MOC doesn't.
 
+#### Bugs
+
+
+Instructions
+-----------
+
+- **main.py**
+
+    Molecular system information input. Calls **fci_davidson.py** to run davidson iteration.
+
+- **fci_davidson.py**
+
+    Initialization of the electron integrals and run the davidson diagonalization. Calls **HC_MOC.py** to calculate the matrix multiplication of HC.
+
+- **HC_NR.py**
+
+    N-Resolution method for the multiplication of HC.
+
+- **HC_MOC.py**
+
+    Minimal Operation-Count method for the multiplication of HC.
+
+- **Opr.py**
+
+    Some basic tools and functions.
 
