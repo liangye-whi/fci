@@ -1,16 +1,16 @@
-Full-CI programming
-=====================
 
-1. Using the N-resolution method will obtain the result with great error. For example, the result of H2 1.1 ccpvdz:
+program of Full CI
+==================
 
-        H2 ccpvdz
-        E(FCI) = -3.191343197476
-        Benchmark
-        E(FCI) = -1.123735236610
-    miserably.
+To set the molecule, modify the file `getdiag.py` and python it to run.
 
-2. The algorithm of N-resolution itself is rather low.
+the submodules of the program:
 
-3. Try to use the Minimal Operation-Count Method to rewrite.
+- fci_getdiag
+    main.py call this module to run a direct diagnolization to solve the groundstate problem.
 
+- HC_MOC
+    inside the davidson iteration fci_davidson call this procedure to calculate the $\sigma = Hc$ multiplication. MOC refers to the algorithm called the Minimal Operation-Count method introduced by the purple book.
 
+- opr
+    this package includes the operation functions such as constructing the Shacitt map and the dictionary of the index of any specific spin orbital string.
