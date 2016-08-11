@@ -8,21 +8,37 @@ import pyscf.lib
 from pyscf.fci import cistring
 
 def contract_1e(f1e, fcivec, norb, nelec):
+    # f1e:
+    # fcivec: fci vector
+    # norb: number of orbitals
+    # nelec: number of total electrons
     if isinstance(nelec, (int, numpy.number)):
+        # if nelec is integer
         nelecb = nelec//2
         neleca = nelec - nelecb
+        # neleca >= nelecb (by 0 or 1)
     else:
         neleca, nelecb = nelec
+        # if nelec is not int
+        # ???
     link_indexa = cistring.gen_linkstr_index_o0(range(norb), neleca)
     link_indexb = cistring.gen_linkstr_index_o0(range(norb), nelecb)
+    # cistring.gen_linkstr_index_o0: produce spin strings according 
+    #to norb and nelec
+    # link_indexa/b = [0bxxxx, ...]
     na = cistring.num_strings(norb, neleca)
     nb = cistring.num_strings(norb, nelecb)
+    # cistring.num_strings: Cnk, numbers of strings that is generated
+    # why not len(link_indexa)? (results are the same)
     ci0 = fcivec.reshape(na,nb)
+    # separate the fci vector into 2d array
     t1 = numpy.zeros((norb,norb,na,nb))
+    # t1 ???
     for str0, tab in enumerate(link_indexa):
+        # str0 = 0bxxxx, tab is str0's index
         for a, i, str1, sign in tab:
             t1[a,i,str1] += sign * ci0[str0]
-    for str0, tab in enumerate(link_indexb):
+    for str0, tab in enumerate(link_indexb):   
         for a, i, str1, sign in tab:
             t1[a,i,:,str1] += sign * ci0[:,str0]
     fcinew = numpy.dot(f1e.reshape(-1), t1.reshape(-1,na*nb))
