@@ -166,16 +166,21 @@ def make_hdiag(h1e, g2e, norb, nelec, opt=None):
 def kernel(h1e, g2e, norb, nelec):
 
     h2e = absorb_h1e(h1e, g2e, norb, nelec, .5)
-
+    # k_ij = h_ij + g_ikkj
     na = cistring.num_strings(norb, nelec//2)
+    # number of strings
     ci0 = numpy.zeros((na,na))
     ci0[0,0] = 1
+    # initial guess of ci state
 
     def hop(c):
         hc = contract_2e(h2e, c, norb, nelec)
         return hc.reshape(-1)
+    # multipication of HC
     hdiag = make_hdiag(h1e, g2e, norb, nelec)
+    # H0 (diag matrix)
     precond = lambda x, e, *args: x/(hdiag-e+1e-4)
+    # preconditioner
     e, c = pyscf.lib.davidson(hop, ci0.reshape(-1), precond)
     return e
 
