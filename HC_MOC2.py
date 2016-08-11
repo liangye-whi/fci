@@ -38,7 +38,7 @@ def HC(Cx, k_mtx, g_mtx, ne, no, ns, Z, occu):
                     assert p != q ##debug##
                     joc = occu[0][i] ^ ((1 << (no-q-1)) + (1 << (no-p-1))) # XOR
                     j = occu[1][str(joc)] # Epq
-                    sgn = sign(res,p,q)
+                    sgn = sign(occu[0][i],joc)
                     sig1[i,:] += sgn * k_mtx[p,q] * C0[j,:] # Ia
                     sig1[:,i] += sgn * k_mtx[p,q] * C0[:,j] # Ib
         
@@ -63,7 +63,7 @@ def HC(Cx, k_mtx, g_mtx, ne, no, ns, Z, occu):
                 for q in ucu: #p->q
                     joc = occu[0][i] ^ ((1 << (no-p-1)) + (1 << (no-q-1))) # XOR
                     j = occu[1][str(joc)] # Epq
-                    sgn = sign(res,p,q)
+                    sgn = sign(occu[0][i],joc)
                     for r in cu: #rrpq
                         sig21[i,:] += sgn * g_mtx[r*no+r,p*no+q] * C0[j,:] # Ia
                         sig21[:,i] += sgn * g_mtx[r*no+r,p*no+q] * C0[:,j] # Ib
@@ -91,8 +91,8 @@ def HC(Cx, k_mtx, g_mtx, ne, no, ns, Z, occu):
                         if r != p:
                             for s in ucu:
                                 if s != q:
-                                    sgn = sign(res,p,q) * sign(resj,r,s)
                                     joc1 = joc ^ ((1 << (no-r-1)) + (1 << (no-s-1))) # XOR
+                                    sgn = sign(occu[0][i],joc) * sign(joc,joc1)
                                     j = occu[1][str(joc1)] # Epq##############
                                     sig21[i,:] += sgn * g_mtx[p*no+q,r*no+s] * C0[j,:] # Ia
                                     sig21[:,i] += sgn * g_mtx[p*no+q,r*no+s] * C0[:,j] # Ib
@@ -118,7 +118,7 @@ def HC(Cx, k_mtx, g_mtx, ne, no, ns, Z, occu):
                         for s in ucu2:
                             joc = occu[0][ib] ^ ((1 << (no-r-1)) + (1 << (no-s-1))) # XOR
                             j = occu[1][str(joc)] # Epq
-                            sgn = sign(res2,r,s)
+                            sgn = sign(occu[0][ib],joc)
                             sig22[ia,ib] += sgn * g_mtx[p*no+p,r*no+s] * C0[ia,j]
                 #ia!=ja,ib=jb
                 for p in cu1:
@@ -126,19 +126,19 @@ def HC(Cx, k_mtx, g_mtx, ne, no, ns, Z, occu):
                         for r in cu2:
                             joc = occu[0][ia] ^ ((1 << (no-p-1)) + (1 << (no-q-1))) # XOR
                             j = occu[1][str(joc)] # Epq
-                            sgn = sign(res1,p,q)
+                            sgn = sign(occu[0][ia],joc)
                             sig22[ia,ib] += sgn * g_mtx[p*no+q,r*no+r] * C0[j,ib]
                 for p in cu1:
                     for q in ucu1:
                         joc1 = occu[0][ia] ^ ((1 << (no-p-1)) + (1 << (no-q-1))) # XOR
                         ja = occu[1][str(joc1)] # Epq
-                        sgna = sign(res1,p,q)
+                        sgna = sign(occu[0][ia],joc1)
                         for r in cu2:
                             for s in ucu2:
                                 joc2 = occu[0][ib] ^ ((1 << (no-r-1)) + (1 << (no-s-1)))
                                 jb = occu[1][str(joc2)] # Epq
                                 resjb='0'*(no+2-len(bin(joc2)))+bin(joc2)[2:]
-                                sgn = sign(res2,r,s) * sgna
+                                sgn = sign(occu[0][ib],joc2) * sgna
                                 sig22[ia,ib] += sgn * g_mtx[p*no+q,r*no+s] * C0[ja,jb]
                                  
         sig = numpy.zeros([ns,ns])

@@ -55,16 +55,29 @@ def constructZ(ne,no):
             Z[i,j] = Z[i-1,j] + Z[i,j-1]
     return Z
 
-def sign(res,p,q):
-    # even +1; odd -1
-    kp = 1 - sum([int(i) for i in res[:p] if i=='1'])%2*2
-    kq = 1 - sum([int(i) for i in res[:q] if i=='1'])%2*2
-    k = kp * kq
-    if p > q:
-        return k
-    elif p < q:
-        return -k
-    else:
-        assert 0
+#   def sign(res,p,q):
+#       # even +1; odd -1
+#       kp = 1 - sum([int(i) for i in res[:p] if i=='1'])%2*2
+#       kq = 1 - sum([int(i) for i in res[:q] if i=='1'])%2*2
+#       k = kp * kq
+#       if p > q:
+#           return k
+#       elif p < q:
+#           return -k
+#       else:
+#           assert 0
+#           return 1
+
+def sign(string0, string1):
+    ss = string1 - string0
+    def count_bit1(n):
+        # see Hamming weight problem and K&R C program
+        return bin(n).count('1')
+    if ss > 0:
+        # string1&ss gives the number of 1s between two strings
+        return (-1) ** (count_bit1(string1&ss))
+    elif ss == 0:
         return 1
+    else:
+        return (-1) ** (count_bit1(string0&(-ss)))
 

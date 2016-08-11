@@ -1,14 +1,18 @@
 Full-CI programming
 =====================
 
-Version 4.1
+Version 5.0 alpha
 -----------
 
-#### New Features
+#### New Features (In Progress)
 
-- Rewrite the Davidson algorithm into a FULL style according to his original paper.
+- Redefine the string logic (simplify).
 
-- Result correct and run fast.
+- Think about accelerate the matrix multipication.
+
+- The slowest part of diagonal elements calc!!
+
+- Take care of the davidson steps.
 
 #### Bugs
 
