@@ -16,7 +16,7 @@ from opr import sign
 
 def HC(Cx, k_mtx, g_mtx, N, string_data):
     ne,no,ns = N
-    occ,vir,spstr,dict_sps2i,aclist,Jlist,signlist = string_data
+    occ,vir,spstr,sps2i,aclist,Jlist,signlist = string_data
     # unpacking
     result = np.matrix(np.zeros(Cx.shape))
 
@@ -33,7 +33,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         sig1 = siga + sigb
 
         ###########################################################
-#        g_tmp = np.einsum('iijj->ij',g_mtx) + np.einsum('ijji'->'ij',g_mtx)
+        g_tmp = np.einsum('iijj->ij',g_mtx) + np.einsum('ijji'->'ij',g_mtx)
 
 
         #--------------
@@ -49,7 +49,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
             for p in occ[i]: 
                 for q in vir[i]: #p->q
                     jstr = spstr[i] ^ (1 << p|1 << q) # XOR
-                    j = dict_sps2i[jstr] # Epq
+                    j = sps2i[jstr] # Epq
                     sgn = sign(spstr[i],jstr)
                     for r in occ[i]: #rrpq
                         sig21[i,:] += sgn * g_mtx[r*no+r,p*no+q] * C0[j,:] # Ia
@@ -79,7 +79,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                                 if s != q:
                                     jstr1 = jstr ^ (1 << r|1 << s) # XOR
                                     sgn = sign(spstr[i],jstr) * sign(jstr,jstr1)
-                                    j = dict_sps2i[jstr1] # Epq##############
+                                    j = sps2i[jstr1] # Epq##############
                                     sig21[i,:] += sgn * g_mtx[p*no+q,r*no+s] * C0[j,:] # Ia
                                     sig21[:,i] += sgn * g_mtx[p*no+q,r*no+s] * C0[:,j] # Ib
         sig21 *= 0.5
@@ -97,7 +97,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                     for r in occ[ib]:
                         for s in vir[ib]:
                             joc = spstr[ib] ^ (1 << r|1 << s) # XOR
-                            j = dict_sps2i[joc] # Epq
+                            j = sps2i[joc] # Epq
                             sgn = sign(spstr[ib],joc)
                             sig22[ia,ib] += sgn * g_mtx[p*no+p,r*no+s] * C0[ia,j]
                 #ia!=ja,ib=jb
@@ -105,18 +105,18 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                     for q in vir[ia]:
                         for r in occ[ib]:
                             joc = spstr[ia] ^ (1 << p|1 << q) # XOR
-                            j = dict_sps2i[joc] # Epq
+                            j = sps2i[joc] # Epq
                             sgn = sign(spstr[ia],joc)
                             sig22[ia,ib] += sgn * g_mtx[p*no+q,r*no+r] * C0[j,ib]
                 for p in occ[ia]:
                     for q in vir[ia]:
                         joc1 = spstr[ia] ^ (1 << p|1 << q) # XOR
-                        ja = dict_sps2i[joc1] # Epq
+                        ja = sps2i[joc1] # Epq
                         sgna = sign(spstr[ia],joc1)
                         for r in occ[ib]:
                             for s in vir[ib]:
                                 joc2 = spstr[ib] ^ (1 << r|1 << s)
-                                jb = dict_sps2i[joc2] # Epq
+                                jb = sps2i[joc2] # Epq
                                 sgn = sign(spstr[ib],joc2) * sgna
                                 sig22[ia,ib] += sgn * g_mtx[p*no+q,r*no+s] * C0[ja,jb]
                                  
