@@ -46,7 +46,7 @@ def construct_string_data(N):
         for a,c in iac:
             str1 = str0 ^ (1<<a|1<<c)
             J0.append(sps2i[str1])
-        Jlist.append(tuple(J0))
+        Jlist.append(J0)
 
     for i, ac in enumerate(aclist):
         str0 = spstr[i]

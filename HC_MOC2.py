@@ -12,6 +12,7 @@ by Ye @ 26JUL2016.
 
 import numpy as np
 from opr import sign
+from pdb import set_trace as st
 #from opr import formOccu, sign
 
 def HC(Cx, k_mtx, g_mtx, N, string_data):
@@ -25,6 +26,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         ###########################################################
 
         K = np.diag([np.einsum('i->',k_mtx[i,i]) for i in occ])
+        print K.shape
         for i,j in enumerate(Jlist): # j is a list
             K[i][j] = np.array([k_mtx[k] for k in aclist[i]]) * np.array(signlist[i])
 
@@ -33,8 +35,10 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         sig1 = siga + sigb
 
         ###########################################################
-        g_tmp = np.einsum('iijj->ij',g_mtx) + np.einsum('ijji'->'ij',g_mtx)
-
+#        g_tmp = np.einsum('iijj->ij',g_mtx) + np.einsum('ijji->ij',g_mtx)
+#        
+#        G = np.diag([np.einsum('ij->',g_tmp[i][:i]) for i in occ])
+#        st()
 
         #--------------
         sig21 = np.zeros([ns,ns])
