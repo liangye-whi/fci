@@ -12,7 +12,7 @@ by Ye @ 26JUL2016.
 
 import numpy
 from pyscf import gto, scf, ao2mo
-from opr import constructZ, formOccu, math_C
+from opr import construct_string_data, math_C
 from HC_MOC2 import HC
 import time
 
@@ -33,7 +33,8 @@ def FCI(mol):
     ne = mol.nelectron/2 #electron per string
     no = len(m.mo_energy)
     ns = math_C(no,ne)
-    Z = constructZ(ne,no)
+    N = (ne,no,ns)
+    string_data = construct_string_data(N)
     #print 'Z'
     #print Z
     print 'ne =', ne, 'no =', no, 'ns =', ns
@@ -61,7 +62,6 @@ def FCI(mol):
 
     #---------------------------------------------------------
 
-    occu = formOccu(ne,no,ns,Z)
 
     #---------------------------------------------------------
     HD = numpy.zeros(ns*ns)
@@ -69,13 +69,13 @@ def FCI(mol):
         print i
         Ca = numpy.matrix(numpy.zeros(ns*ns)).T
         Ca[i*ns+i,0] = 1.0
-        siga = HC(Ca, k_mtx, g_mtx, ne, no, ns, Z, occu)
+        siga = HC(Ca, k_mtx, g_mtx, N, string_data)
         HD[i] = siga[i]
         for j in xrange(i+1,ns):
             Ca = numpy.matrix(numpy.zeros(ns*ns)).T
             Ca[i*ns+j,0] = 1.0
             #print Ca.reshape(ns,ns)
-            siga = HC(Ca, k_mtx, g_mtx, ne, no, ns, Z, occu)
+            siga = HC(Ca, k_mtx, g_mtx, N, string_data)
             #print 'siga.shape',siga.shape
             HD[i*ns+j] = siga[i]
             HD[j*ns+i] = siga[i]
@@ -88,7 +88,7 @@ def FCI(mol):
     #for i in xrange(L):
     #    AB = numpy.matrix(HC(numpy.array(B[:,i].reshape(ns,ns)), k_mtx, g_mtx, ne, no, ns, Z, occu)).reshape(ns*ns,-1)
     #print AB
-    AB = HC(B, k_mtx, g_mtx, ne, no, ns, Z, occu)
+    AB = HC(B, k_mtx, g_mtx, N, string_data)
     A = B.T * AB
     HD[0] += abs(HD[0]*0.001)
     
@@ -127,7 +127,7 @@ def FCI(mol):
         #F.
         B = numpy.c_[B,b]
         #G.
-        AB = numpy.c_[AB, HC(b, k_mtx, g_mtx, ne, no, ns, Z, occu)]
+        AB = numpy.c_[AB, HC(b, k_mtx, g_mtx, N, string_data)]
         #H.
         a = B.T * AB[:,M]
         A = numpy.c_[A,a[:M,0]]

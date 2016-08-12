@@ -8,9 +8,13 @@ Version 5.0 alpha
 
 - Redefine the string logic (simplify).
 
+    **Done.**
+
 - Think about accelerate the matrix multipication.
 
 - The slowest part of diagonal elements calc!!
+
+    **sig1 & matrix K done.**
 
 - Take care of the davidson steps.
 
