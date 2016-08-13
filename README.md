@@ -1,7 +1,7 @@
 Full-CI programming
 =====================
 
-Version 5.0 alpha
+Version 5.0 alpha phase 2_
 -----------
 
 #### New Features (In Progress)

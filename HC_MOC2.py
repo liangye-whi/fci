@@ -12,7 +12,7 @@ by Ye @ 26JUL2016.
 
 import numpy as np
 from opr import sign
-from pdb import set_trace as st
+from pdb import set_trace as stop
 #from opr import formOccu, sign
 
 def HC(Cx, k_mtx, g_mtx, N, string_data):
@@ -24,31 +24,62 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
     for clm in xrange(Cx.shape[1]):
         C0 = np.array(Cx[:,clm]).reshape(ns,ns)
         ###########################################################
-
+        
+        # diagonal of K
         K = np.diag([np.einsum('i->',k_mtx[i,i]) for i in occ])
-        print K.shape
-        for i,j in enumerate(Jlist): # j is a list
-            K[i][j] = np.array([k_mtx[k] for k in aclist[i]]) * np.array(signlist[i])
+        # off-diagonal of K
+        for i,jlist in enumerate(Jlist): # j is a list
+            K[i][jlist] = np.array([k_mtx[k] for k in aclist[i]]) * np.array(signlist[i])
 
         siga = np.dot(K,C0)
         sigb = np.dot(C0,K.T) # = np.dot(K,C0.T).T
         sig1 = siga + sigb
 
         ###########################################################
-#        g_tmp = np.einsum('iijj->ij',g_mtx) + np.einsum('ijji->ij',g_mtx)
-#        
-#        G = np.diag([np.einsum('ij->',g_tmp[i][:i]) for i in occ])
-#        st()
+        # diagonal of G
+        g_tmp = np.einsum('iijj->ij',g_mtx)
+        G = np.diag([np.einsum('ij->',g_tmp[list(i)][:,list(i)]) for i in occ])
+        g_tmp = np.einsum('ijji->ij',g_mtx)
+        G += np.diag([np.einsum('ij->',g_tmp[list(occ[i])][:,list(vir[i])]) for i in xrange(ns)])
 
-        #--------------
         sig21 = np.zeros([ns,ns])
         for i in xrange(ns):
             # leap 0, Ia=Ja
-            sumgqqss = sum([g_mtx[q*no+q,s*no+s] for q in occ[i] for s in occ[i]])
-            sumgsqqs = sum([g_mtx[s*no+q,q*no+s] for q in vir[i] for s in occ[i]])
+            sumgqqss = sum([g_mtx[q,q,s,s] for q in occ[i] for s in occ[i]])
+            sumgsqqs = sum([g_mtx[s,q,q,s] for q in vir[i] for s in occ[i]])
             sig21[i,:] += (sumgqqss + sumgsqqs) * C0[i,:] # Ia
             sig21[:,i] += (sumgqqss + sumgsqqs) * C0[:,i] # Ib
-            # leap 1,
+        #print sig21
+        # leap 1,
+
+        for i,jlist in enumerate(Jlist):
+            g_rrpq = np.einsum('rrpq->pq',g_mtx[list(occ[i])][:,list(occ[i])])
+            g_pqrr = np.einsum('pqrr->pq',g_mtx[:,:,list(occ[i])][...,list(occ[i])])
+            g_pqpp = np.einsum('pqpp->pq',g_mtx)
+#            g_pqqq = np.einsum('pqqq->pq',g_mtx[list(occ[i])][:,list(vir[i])][:,:,list(vir[i])][...,list(vir[i])])
+            g_prrq = np.einsum('prrq->pq',g_mtx[:,list(vir[i])][:,:,list(vir[i])])
+            g_rqpr = np.einsum('rqpr->pq',g_mtx[list(occ[i])][...,list(occ[i])])
+            g_tmp = g_rrpq + g_pqrr + g_prrq - g_rqpr
+            G[i][jlist] += np.array([g_tmp[k] for k in aclist[i]]) * np.array(signlist[i])
+
+        for i,jlist in enumerate(Jlist):
+            jjlist = [Jlist[j] for j in jlist]
+            acac = [aclist[j] for j in jlist]
+            ssign = [signlist[j] for j in jlist]
+            for j,jac in enumerate(aclist[i]):
+                for k,kw in enumerate(acac[j]):
+                    if len(set(kw + aclist[i][j])) < 4:
+                        ssign[j][k] = 0
+                d = [jac+k for k in acac[j]]
+                print '******'
+                print d
+                g_tmp0 = [g_mtx[k] for k in d]
+#                stop()
+                G[i][list(jjlist[j])] += np.array(g_tmp0) * np.array(ssign[j]) * signlist[i][j]
+
+        print np.dot(G,C0) + np.dot(C0,G.T)
+        print '======'
+
         for i in xrange(ns):
             for p in occ[i]: 
                 for q in vir[i]: #p->q
@@ -56,23 +87,23 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                     j = sps2i[jstr] # Epq
                     sgn = sign(spstr[i],jstr)
                     for r in occ[i]: #rrpq
-                        sig21[i,:] += sgn * g_mtx[r*no+r,p*no+q] * C0[j,:] # Ia
-                        sig21[:,i] += sgn * g_mtx[r*no+r,p*no+q] * C0[:,j] # Ib
+                        sig21[i,:] += sgn * g_mtx[r,r,p,q] * C0[j,:] # Ia
+                        sig21[:,i] += sgn * g_mtx[r,r,p,q] * C0[:,j] # Ib
                     for r in occ[i]: #pqrr
                         if r != p:
-                            sig21[i,:] += sgn * g_mtx[p*no+q,r*no+r] * C0[j,:] # Ia
-                            sig21[:,i] += sgn * g_mtx[p*no+q,r*no+r] * C0[:,j] # Ib
+                            sig21[i,:] += sgn * g_mtx[p,q,r,r] * C0[j,:] # Ia
+                            sig21[:,i] += sgn * g_mtx[p,q,r,r] * C0[:,j] # Ib
                         else:
-                            sig21[i,:] += sgn * g_mtx[p*no+q,q*no+q] * C0[j,:] # Ia
-                            sig21[:,i] += sgn * g_mtx[p*no+q,q*no+q] * C0[:,j] # Ib
+                            sig21[i,:] += sgn * g_mtx[p,q,q,q] * C0[j,:] # Ia
+                            sig21[:,i] += sgn * g_mtx[p,q,q,q] * C0[:,j] # Ib
                     for r in vir[i]: #prrq
                         if r != q:
-                            sig21[i,:] += sgn * g_mtx[p*no+r,r*no+q] * C0[j,:] # Ia
-                            sig21[:,i] += sgn * g_mtx[p*no+r,r*no+q] * C0[:,j] # Ib
+                            sig21[i,:] += sgn * g_mtx[p,r,r,q] * C0[j,:] # Ia
+                            sig21[:,i] += sgn * g_mtx[p,r,r,q] * C0[:,j] # Ib
                     for r in occ[i]: #rqpr
                         if r != p:
-                            sig21[i,:] += - sgn * g_mtx[r*no+q,p*no+r] * C0[j,:] # Ia
-                            sig21[:,i] += - sgn * g_mtx[r*no+q,p*no+r] * C0[:,j] # Ib
+                            sig21[i,:] += - sgn * g_mtx[r,q,p,r] * C0[j,:] # Ia
+                            sig21[:,i] += - sgn * g_mtx[r,q,p,r] * C0[:,j] # Ib
                         
             for p in occ[i]: #pq??
                 for q in vir[i]:
@@ -84,8 +115,10 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                                     jstr1 = jstr ^ (1 << r|1 << s) # XOR
                                     sgn = sign(spstr[i],jstr) * sign(jstr,jstr1)
                                     j = sps2i[jstr1] # Epq##############
-                                    sig21[i,:] += sgn * g_mtx[p*no+q,r*no+s] * C0[j,:] # Ia
-                                    sig21[:,i] += sgn * g_mtx[p*no+q,r*no+s] * C0[:,j] # Ib
+                                    sig21[i,:] += sgn * g_mtx[p,q,r,s] * C0[j,:] # Ia
+                                    sig21[:,i] += sgn * g_mtx[p,q,r,s] * C0[:,j] # Ib
+        print sig21
+#        stop()
         sig21 *= 0.5
         #==================
         sig22 = np.zeros([ns,ns])
@@ -95,7 +128,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                 #ia=ja,ib=jb
                 for p in occ[ia]:
                     for r in occ[ib]:
-                        sig22[ia,ib] += g_mtx[p*no+p,r*no+r] * C0[ia,ib]
+                        sig22[ia,ib] += g_mtx[p,p,r,r] * C0[ia,ib]
                 #ia=ja,ib!=jb
                 for p in occ[ia]:
                     for r in occ[ib]:
@@ -103,7 +136,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                             joc = spstr[ib] ^ (1 << r|1 << s) # XOR
                             j = sps2i[joc] # Epq
                             sgn = sign(spstr[ib],joc)
-                            sig22[ia,ib] += sgn * g_mtx[p*no+p,r*no+s] * C0[ia,j]
+                            sig22[ia,ib] += sgn * g_mtx[p,p,r,s] * C0[ia,j]
                 #ia!=ja,ib=jb
                 for p in occ[ia]:
                     for q in vir[ia]:
@@ -111,7 +144,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                             joc = spstr[ia] ^ (1 << p|1 << q) # XOR
                             j = sps2i[joc] # Epq
                             sgn = sign(spstr[ia],joc)
-                            sig22[ia,ib] += sgn * g_mtx[p*no+q,r*no+r] * C0[j,ib]
+                            sig22[ia,ib] += sgn * g_mtx[p,q,r,r] * C0[j,ib]
                 for p in occ[ia]:
                     for q in vir[ia]:
                         joc1 = spstr[ia] ^ (1 << p|1 << q) # XOR
@@ -122,10 +155,10 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                                 joc2 = spstr[ib] ^ (1 << r|1 << s)
                                 jb = sps2i[joc2] # Epq
                                 sgn = sign(spstr[ib],joc2) * sgna
-                                sig22[ia,ib] += sgn * g_mtx[p*no+q,r*no+s] * C0[ja,jb]
+                                sig22[ia,ib] += sgn * g_mtx[p,q,r,s] * C0[ja,jb]
                                  
         sig = np.zeros([ns,ns])
         sig = sig1 + sig21 + sig22
-    result[:,clm] = np.matrix(sig).reshape(ns*ns,-1)
+    result[:,clm] = np.matrix(sig).reshape(ns*ns,1)
     #-----------------------------------------------------------------------
     return result 

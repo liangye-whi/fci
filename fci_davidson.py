@@ -47,6 +47,7 @@ def FCI(mol):
     print h_mtx
 
     g_mtx = ao2mo.kernel(mol, m.mo_coeff, compact=False)
+    g_mtx = g_mtx.reshape(no,no,no,no)
     print 'g matrix'
     print g_mtx[0,0] # g[p,q,r,s] => g[p*no+q,r*no+s]
 
@@ -55,7 +56,7 @@ def FCI(mol):
     for i in xrange(no):
         for j in xrange(no):
             for r in xrange(no):
-                k_mtx[i,j] -= g_mtx[i*no+r,r*no+j]
+                k_mtx[i,j] -= g_mtx[i,r,r,j]
             k_mtx[i,j] *= 0.5
     k_mtx = k_mtx + h_mtx
 
