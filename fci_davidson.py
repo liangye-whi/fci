@@ -13,7 +13,7 @@ by Ye @ 26JUL2016.
 import numpy as np
 from pyscf import gto, scf, ao2mo
 from opr import construct_string_data, math_C
-from HC_MOC2 import HC, make_hdiag
+from HC_MOC import HC, make_hdiag
 import time
 
 import pdb
