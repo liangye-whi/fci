@@ -115,3 +115,23 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
     result[:,clm] = np.matrix(sig).reshape(ns*ns,1)
     #-----------------------------------------------------------------------
     return result 
+
+def make_hdiag(k_mtx, g_mtx, N, string_data):
+    ne, no, ns = N
+    occ,vir,spstr,sps2i,aclist,Jlist,signlist = string_data
+
+    diagj = np.einsum('iijj->ij',g_mtx)
+    diagk = np.einsum('ijji->ij',g_mtx)
+    hdiag = []
+    for ai,ao in enumerate(occ):
+        for bi,bo in enumerate(occ):
+            aocc = list(ao)
+            avir = list(vir[ai])
+            bocc = list(bo)
+            bvir = list(vir[bi])
+            e1 = k_mtx[aocc,aocc].sum() + k_mtx[bocc,bocc].sum()
+            e2 = diagj[aocc][:,aocc].sum() + diagj[aocc][:,bocc].sum() \
+               + diagj[bocc][:,aocc].sum() + diagj[bocc][:,bocc].sum() \
+               + diagk[aocc][:,avir].sum() + diagk[bocc][:,bvir].sum()
+            hdiag.append(e1 + e2*.5)
+    return np.array(hdiag)
