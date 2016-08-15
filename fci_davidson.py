@@ -10,10 +10,10 @@ by Ye @ 26JUL2016.
 '''
 #-------------------------------------------
 
-import numpy
+import numpy as np
 from pyscf import gto, scf, ao2mo
-from opr import constructZ, formOccu, math_C
-from HC_MOC2 import HC
+from opr import construct_string_data, math_C
+from HC_MOC import HC, make_hdiag
 import time
 
 import pdb
@@ -33,7 +33,8 @@ def FCI(mol):
     ne = mol.nelectron/2 #electron per string
     no = len(m.mo_energy)
     ns = math_C(no,ne)
-    Z = constructZ(ne,no)
+    N = (ne,no,ns)
+    string_data = construct_string_data(N)
     #print 'Z'
     #print Z
     print 'ne =', ne, 'no =', no, 'ns =', ns
@@ -41,62 +42,40 @@ def FCI(mol):
     ###########################################################
 
     h_ao_mtx = scf.hf.get_hcore(mol)
-    h_mtx = numpy.dot(numpy.dot(m.mo_coeff.T,h_ao_mtx),m.mo_coeff)
-    print 'h matrix'
-    print h_mtx
+    h_mtx = np.dot(np.dot(m.mo_coeff.T,h_ao_mtx),m.mo_coeff)
+    print 'h matrix done.' 
 
     g_mtx = ao2mo.kernel(mol, m.mo_coeff, compact=False)
-    print 'g matrix'
-    print g_mtx[0,0] # g[p,q,r,s] => g[p*no+q,r*no+s]
+    g_mtx = g_mtx.reshape(no,no,no,no)
+    print 'g matrix done.'
 
 
-    k_mtx = numpy.zeros([no,no])
-    for i in xrange(no):
-        for j in xrange(no):
-            for r in xrange(no):
-                k_mtx[i,j] -= g_mtx[i*no+r,r*no+j]
-            k_mtx[i,j] *= 0.5
+    k_mtx = np.einsum('irrj->ij',g_mtx)
+    k_mtx *= -0.5
     k_mtx = k_mtx + h_mtx
-
-
-    #---------------------------------------------------------
-
-    occu = formOccu(ne,no,ns,Z)
+    print 'k matrix done.'
 
     #---------------------------------------------------------
-    HD = numpy.zeros(ns*ns)
-    for i in xrange(ns):
-        print i
-        Ca = numpy.matrix(numpy.zeros(ns*ns)).T
-        Ca[i*ns+i,0] = 1.0
-        siga = HC(Ca, k_mtx, g_mtx, ne, no, ns, Z, occu)
-        HD[i] = siga[i]
-        for j in xrange(i+1,ns):
-            Ca = numpy.matrix(numpy.zeros(ns*ns)).T
-            Ca[i*ns+j,0] = 1.0
-            #print Ca.reshape(ns,ns)
-            siga = HC(Ca, k_mtx, g_mtx, ne, no, ns, Z, occu)
-            #print 'siga.shape',siga.shape
-            HD[i*ns+j] = siga[i]
-            HD[j*ns+i] = siga[i]
-            #Hd[0,0] +=  1e-3
+
+    HD = make_hdiag(k_mtx,g_mtx,N,string_data)
+    print 'H0 matrix done.'
     #---------------------------------------------------------
     L = 1           #number of initial guess basis vectors
     K = 0           #ground state
-    B = numpy.matrix(numpy.eye(ns*ns,L))
-    I = numpy.matrix(numpy.eye(ns*ns))
+    B = np.matrix(np.eye(ns*ns,L))
+    I = np.matrix(np.eye(ns*ns))
     #for i in xrange(L):
-    #    AB = numpy.matrix(HC(numpy.array(B[:,i].reshape(ns,ns)), k_mtx, g_mtx, ne, no, ns, Z, occu)).reshape(ns*ns,-1)
+    #    AB = np.matrix(HC(np.array(B[:,i].reshape(ns,ns)), k_mtx, g_mtx, ne, no, ns, Z, occu)).reshape(ns*ns,-1)
     #print AB
-    AB = HC(B, k_mtx, g_mtx, ne, no, ns, Z, occu)
+    AB = HC(B, k_mtx, g_mtx, N, string_data)
     A = B.T * AB
     HD[0] += abs(HD[0]*0.001)
     
-    dt = numpy.matrix(I)
+    dt = np.matrix(I)
     for i in xrange(L):
         dt = dt - B[:,i] * B[:,i].T
 
-    e, c = numpy.linalg.eigh(A)
+    e, c = np.linalg.eigh(A)
     idx = e.argsort()[K]
     ek = e[idx]
     ck = c[:,idx]
@@ -114,10 +93,11 @@ def FCI(mol):
     for M in xrange(L, iter_limit):
         q = (AB - ek * B) * ck
         #D.
-        epsi = numpy.matrix(numpy.diag((ek - HD) ** (-1))) * q
+        epsi = np.matrix(np.diag((ek - HD) ** (-1))) * q
+        epsi = np.matrix(np.diag((ek - HD) ** (-1))) * q
         #E.
         d = dt * epsi
-        res = numpy.linalg.norm(d)
+        res = np.linalg.norm(d)
         print 'res =', res
         if res < crt: 
             print 'Iteration Converged.'
@@ -125,17 +105,17 @@ def FCI(mol):
 
         b = d / res
         #F.
-        B = numpy.c_[B,b]
+        B = np.c_[B,b]
         #G.
-        AB = numpy.c_[AB, HC(b, k_mtx, g_mtx, ne, no, ns, Z, occu)]
+        AB = np.c_[AB, HC(b, k_mtx, g_mtx, N, string_data)]
         #H.
         a = B.T * AB[:,M]
-        A = numpy.c_[A,a[:M,0]]
-        A = numpy.r_[A,a.T]
+        A = np.c_[A,a[:M,0]]
+        A = np.r_[A,a.T]
         print A.shape
         dt = dt - b * b.T
 
-        e, c = numpy.linalg.eigh(A)
+        e, c = np.linalg.eigh(A)
         idx = e.argsort()[K]
         ek = e[idx]
         ck = c[:,idx]

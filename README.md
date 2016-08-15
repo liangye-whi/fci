@@ -1,20 +1,20 @@
 Full-CI programming
 =====================
 
-Version 4.1
+Version 5.0
 -----------
 
-#### New Features
+#### New Features (In Progress)
 
-- Rewrite the Davidson algorithm into a FULL style according to his original paper.
+- Redefine the string data structure.
 
-- Result correct and run fast.
+- Accelerate the matrix multipication with matrix operations.
+
+- Rewrite the diagonal elements HD calc
 
 #### Bugs
 
-- The perturbation should be added to initial guess of basis, but not the diagonal H0.
-
-- The davidson iteration may still have a little problem, because the iteration steps are too many during calc He2 CC-PVDZ system (24 iter).
+- Try using preconditioner.
 
 Instructions
 -----------
