@@ -1,7 +1,7 @@
 Full-CI programming
 =====================
 
-Version 5.0 alpha phase 2_
+Version 5.0 alpha phase 2
 -----------
 
 #### New Features (In Progress)
@@ -14,7 +14,7 @@ Version 5.0 alpha phase 2_
 
 - The slowest part of diagonal elements calc!!
 
-    **sig1 & matrix K done.**
+    **sig1 & matrices K, G done.**
 
 - Take care of the davidson steps.
 

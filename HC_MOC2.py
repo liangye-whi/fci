@@ -29,97 +29,50 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         K = np.diag([np.einsum('i->',k_mtx[i,i]) for i in occ])
         # off-diagonal of K
         for i,jlist in enumerate(Jlist): # j is a list
-            K[i][jlist] = np.array([k_mtx[k] for k in aclist[i]]) * np.array(signlist[i])
-
-        siga = np.dot(K,C0)
-        sigb = np.dot(C0,K.T) # = np.dot(K,C0.T).T
-        sig1 = siga + sigb
+            K[i][jlist] = np.array([k_mtx[k] for k in aclist[i]]) \
+                        * np.array(signlist[i])
+        sig1 = np.dot(K,C0) + np.dot(C0,K.T)
+#        siga = np.dot(K,C0)
+#        sigb = np.dot(C0,K.T) # = np.dot(K,C0.T).T
+#        sig1 = siga + sigb
 
         ###########################################################
         # diagonal of G
         g_tmp = np.einsum('iijj->ij',g_mtx)
-        G = np.diag([np.einsum('ij->',g_tmp[list(i)][:,list(i)]) for i in occ])
+        G = np.diag([np.einsum('ij->',g_tmp[list(i)][:,list(i)]) \
+                for i in occ])
         g_tmp = np.einsum('ijji->ij',g_mtx)
-        G += np.diag([np.einsum('ij->',g_tmp[list(occ[i])][:,list(vir[i])]) for i in xrange(ns)])
-
-        sig21 = np.zeros([ns,ns])
-        for i in xrange(ns):
-            # leap 0, Ia=Ja
-            sumgqqss = sum([g_mtx[q,q,s,s] for q in occ[i] for s in occ[i]])
-            sumgsqqs = sum([g_mtx[s,q,q,s] for q in vir[i] for s in occ[i]])
-            sig21[i,:] += (sumgqqss + sumgsqqs) * C0[i,:] # Ia
-            sig21[:,i] += (sumgqqss + sumgsqqs) * C0[:,i] # Ib
-        #print sig21
-        # leap 1,
-
+        G += np.diag([np.einsum('ij->', \
+                g_tmp[list(occ[i])][:,list(vir[i])]) \
+                for i in xrange(ns)])
+        # off-diagonal of G
         for i,jlist in enumerate(Jlist):
-            g_rrpq = np.einsum('rrpq->pq',g_mtx[list(occ[i])][:,list(occ[i])])
-            g_pqrr = np.einsum('pqrr->pq',g_mtx[:,:,list(occ[i])][...,list(occ[i])])
-            g_pqpp = np.einsum('pqpp->pq',g_mtx)
+            g_rrpq = np.einsum('rrpq->pq', \
+                    g_mtx[list(occ[i])][:,list(occ[i])])
+            g_pqrr = np.einsum('pqrr->pq', \
+                    g_mtx[:,:,list(occ[i])][...,list(occ[i])])
+            g_prrq = np.einsum('prrq->pq', \
+                    g_mtx[:,list(vir[i])][:,:,list(vir[i])])
+            g_rqpr = np.einsum('rqpr->pq', \
+                    g_mtx[list(occ[i])][...,list(occ[i])])
 #            g_pqqq = np.einsum('pqqq->pq',g_mtx[list(occ[i])][:,list(vir[i])][:,:,list(vir[i])][...,list(vir[i])])
-            g_prrq = np.einsum('prrq->pq',g_mtx[:,list(vir[i])][:,:,list(vir[i])])
-            g_rqpr = np.einsum('rqpr->pq',g_mtx[list(occ[i])][...,list(occ[i])])
+#            g_pqpp = np.einsum('pqpp->pq',g_mtx)
             g_tmp = g_rrpq + g_pqrr + g_prrq - g_rqpr
-            G[i][jlist] += np.array([g_tmp[k] for k in aclist[i]]) * np.array(signlist[i])
-
-        for i,jlist in enumerate(Jlist):
-            jjlist = [Jlist[j] for j in jlist]
-            acac = [aclist[j] for j in jlist]
-            ssign = [signlist[j] for j in jlist]
-            for j,jac in enumerate(aclist[i]):
-                for k,kw in enumerate(acac[j]):
-                    if len(set(kw + aclist[i][j])) < 4:
-                        ssign[j][k] = 0
-                d = [jac+k for k in acac[j]]
-                print '******'
-                print d
+            G[i][jlist] += np.array([g_tmp[k] for k in aclist[i]]) \
+                        * np.array(signlist[i])
+        for i,jl in enumerate(Jlist):
+            for j_index,j in enumerate(jl):
+                #----
+                ijindex = Jlist[j].index(i)
+                kl = Jlist[j][:]
+                d = [aclist[i][j_index]+k for k in aclist[j]]
+                ssign = list(signlist[i][j_index] * np.array(signlist[j]))
+                for k, kac in enumerate(d):
+                    if len(set(kac)) < 4:
+                        ssign[k] = 0
                 g_tmp0 = [g_mtx[k] for k in d]
-#                stop()
-                G[i][list(jjlist[j])] += np.array(g_tmp0) * np.array(ssign[j]) * signlist[i][j]
-
-        print np.dot(G,C0) + np.dot(C0,G.T)
-        print '======'
-
-        for i in xrange(ns):
-            for p in occ[i]: 
-                for q in vir[i]: #p->q
-                    jstr = spstr[i] ^ (1 << p|1 << q) # XOR
-                    j = sps2i[jstr] # Epq
-                    sgn = sign(spstr[i],jstr)
-                    for r in occ[i]: #rrpq
-                        sig21[i,:] += sgn * g_mtx[r,r,p,q] * C0[j,:] # Ia
-                        sig21[:,i] += sgn * g_mtx[r,r,p,q] * C0[:,j] # Ib
-                    for r in occ[i]: #pqrr
-                        if r != p:
-                            sig21[i,:] += sgn * g_mtx[p,q,r,r] * C0[j,:] # Ia
-                            sig21[:,i] += sgn * g_mtx[p,q,r,r] * C0[:,j] # Ib
-                        else:
-                            sig21[i,:] += sgn * g_mtx[p,q,q,q] * C0[j,:] # Ia
-                            sig21[:,i] += sgn * g_mtx[p,q,q,q] * C0[:,j] # Ib
-                    for r in vir[i]: #prrq
-                        if r != q:
-                            sig21[i,:] += sgn * g_mtx[p,r,r,q] * C0[j,:] # Ia
-                            sig21[:,i] += sgn * g_mtx[p,r,r,q] * C0[:,j] # Ib
-                    for r in occ[i]: #rqpr
-                        if r != p:
-                            sig21[i,:] += - sgn * g_mtx[r,q,p,r] * C0[j,:] # Ia
-                            sig21[:,i] += - sgn * g_mtx[r,q,p,r] * C0[:,j] # Ib
-                        
-            for p in occ[i]: #pq??
-                for q in vir[i]:
-                    jstr = spstr[i] ^ (1 << p|1 << q) # XOR
-                    for r in occ[i]:
-                        if r != p:
-                            for s in vir[i]:
-                                if s != q:
-                                    jstr1 = jstr ^ (1 << r|1 << s) # XOR
-                                    sgn = sign(spstr[i],jstr) * sign(jstr,jstr1)
-                                    j = sps2i[jstr1] # Epq##############
-                                    sig21[i,:] += sgn * g_mtx[p,q,r,s] * C0[j,:] # Ia
-                                    sig21[:,i] += sgn * g_mtx[p,q,r,s] * C0[:,j] # Ib
-        print sig21
-#        stop()
-        sig21 *= 0.5
+                G[i][kl] += np.array(g_tmp0) * np.array(ssign)
+        sig21 = 0.5 * (np.dot(G,C0) + np.dot(C0,G.T))    #########to be replaced
         #==================
         sig22 = np.zeros([ns,ns])
         
