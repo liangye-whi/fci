@@ -1,28 +1,20 @@
 Full-CI programming
 =====================
 
-Version 5.0 alpha phase 2
+Version 5.0
 -----------
 
 #### New Features (In Progress)
 
-- Redefine the string logic (simplify).
+- Redefine the string data structure.
 
-    **Done.**
+- Accelerate the matrix multipication with matrix operations.
 
-- Think about accelerate the matrix multipication.
-
-- The slowest part of diagonal elements calc!!
-
-    **sig1 & matrices K, G done.**
-
-- Take care of the davidson steps.
+- Rewrite the diagonal elements HD calc
 
 #### Bugs
 
-- The perturbation should be added to initial guess of basis, but not the diagonal H0.
-
-- The davidson iteration may still have a little problem, because the iteration steps are too many during calc He2 CC-PVDZ system (24 iter).
+- Try using preconditioner.
 
 Instructions
 -----------
