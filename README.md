@@ -1,7 +1,7 @@
 Full-CI programming
 =====================
 
-Version 5.0
+Version 5.1
 -----------
 
 #### New Features (In Progress)
