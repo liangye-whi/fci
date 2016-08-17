@@ -16,19 +16,19 @@ from opr import construct_string_data, math_C
 from HC_MOC import HC, make_hdiag
 import time
 
-import pdb
+from pdb import set_trace as stop
 
 def FCI(mol):
     start_time = time.time()
     m = scf.RHF(mol)
     m.kernel()
 
-    print 'mo_coeff'
-    print(m.mo_coeff)
-    print 'mo_occ'
-    print(m.mo_occ)
-    print 'mo_energy'
-    print(m.mo_energy)
+#    print 'mo_coeff'
+#    print(m.mo_coeff)
+#    print 'mo_occ'
+#    print(m.mo_occ)
+#    print 'mo_energy'
+#    print(m.mo_energy)
 
     ne = mol.nelectron/2 #electron per string
     no = len(m.mo_energy)
@@ -43,6 +43,7 @@ def FCI(mol):
 
     h_ao_mtx = scf.hf.get_hcore(mol)
     h_mtx = np.dot(np.dot(m.mo_coeff.T,h_ao_mtx),m.mo_coeff)
+    del h_ao_mtx
     print 'h matrix done.' 
 
     g_mtx = ao2mo.kernel(mol, m.mo_coeff, compact=False)
@@ -53,6 +54,7 @@ def FCI(mol):
     k_mtx = np.einsum('irrj->ij',g_mtx)
     k_mtx *= -0.5
     k_mtx = k_mtx + h_mtx
+    del h_mtx
     print 'k matrix done.'
 
     #---------------------------------------------------------
@@ -63,7 +65,6 @@ def FCI(mol):
     L = 1           #number of initial guess basis vectors
     K = 0           #ground state
     B = np.matrix(np.eye(ns*ns,L))
-    I = np.matrix(np.eye(ns*ns))
     #for i in xrange(L):
     #    AB = np.matrix(HC(np.array(B[:,i].reshape(ns,ns)), k_mtx, g_mtx, ne, no, ns, Z, occu)).reshape(ns*ns,-1)
     #print AB
@@ -71,16 +72,15 @@ def FCI(mol):
     A = B.T * AB
     HD[0] += abs(HD[0]*0.001)
     
-    dt = np.matrix(I)
-    for i in xrange(L):
-        dt = dt - B[:,i] * B[:,i].T
+    dt = np.matrix(np.eye(ns*ns))
+    dt[range(L),range(L)] -= 1
 
     e, c = np.linalg.eigh(A)
     idx = e.argsort()[K]
     ek = e[idx]
     ck = c[:,idx]
     print 'E =',ek
-    print ck
+#    print ck
     
     #===criterion of convergence===
     crt = 1e-9
@@ -94,8 +94,10 @@ def FCI(mol):
         q = (AB - ek * B) * ck
         #D.
         epsi = np.matrix(np.diag((ek - HD) ** (-1))) * q
+        del q
         #E.
         d = dt * epsi
+        del epsi
         res = np.linalg.norm(d)
         print 'res =', res
         if res < crt: 
@@ -103,6 +105,7 @@ def FCI(mol):
             break
 
         b = d / res
+        del d
         #F.
         B = np.c_[B,b]
         #G.

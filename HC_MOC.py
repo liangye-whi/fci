@@ -31,7 +31,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         for i,jlist in enumerate(Jlist): # j is a list
             K[i][jlist] = np.array([k_mtx[k] for k in aclist[i]]) \
                         * np.array(signlist[i])
-        sig1 = np.dot(K,C0) + np.dot(C0,K.T)
+        sig = np.dot(K,C0) + np.dot(C0,K.T)
 #        siga = np.dot(K,C0)
 #        sigb = np.dot(C0,K.T) # = np.dot(K,C0.T).T
 #        sig1 = siga + sigb
@@ -73,7 +73,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                         ssign[k] = 0
                 g_tmp0 = [g_mtx[k] for k in d]
                 G[i][kl] += np.array(g_tmp0) * np.array(ssign)
-        sig21 = 0.5 * (np.dot(G,C0) + np.dot(C0,G.T))    #########to be replaced
+        sig += 0.5 * (np.dot(G,C0) + np.dot(C0,G.T))    #########to be replaced
         #==================
         E_pq = np.zeros([no,no,ns,ns])
         for ia, p in enumerate(occ):
@@ -100,9 +100,8 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         for p in xrange(no):
             for q in xrange(no):
                 sig22pq[p,q] = np.dot(D_pq[p,q],G_pq[p,q].T)
-        sig22 = np.einsum('pqij->ij',sig22pq)
+        sig += np.einsum('pqij->ij',sig22pq)
 
-        sig = sig1 + sig21 + sig22
         result[:,clm] = np.matrix(sig).reshape(ns*ns,1)
     #-----------------------------------------------------------------------
     return result 
