@@ -87,7 +87,7 @@ def FCI(mol):
     crt = 1e-9
     #==============================
     iter_num = 0
-    iter_limit = 10000
+    iter_limit = 100
     ######################################################################
     print 'Now start iteration...'
     start_davidson = time.time()
@@ -117,8 +117,9 @@ def FCI(mol):
         a = np.dot(B.T, AB[:,M]).reshape(-1,1)
         A = np.c_[A,a[:M,0]]
         A = np.r_[A,a.T]
+        del a
         print A.shape
-        dt = dt - b * b.T
+        dt -= b * b.T
         e, c = np.linalg.eigh(A)
         idx = e.argsort()[K]
         ek = e[idx]
