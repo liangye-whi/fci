@@ -1,10 +1,10 @@
 Full-CI programming
 =====================
 
-Version 5.1
+Version 5.2
 -----------
 
-#### New Features (In Progress)
+#### New Features
 
 - Redefine the string data structure.
 
@@ -12,9 +12,9 @@ Version 5.1
 
 - Rewrite the diagonal elements HD calc
 
-#### Bugs
+- Detailed optimization.
 
-- Try using preconditioner.
+- Now is able to calc Li2 sto3g
 
 Instructions
 -----------

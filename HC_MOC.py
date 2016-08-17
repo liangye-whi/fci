@@ -27,9 +27,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         K[i][jlist] = np.array([k_mtx[k] for k in aclist[i]]) \
                     * np.array(signlist[i])
     sig = np.dot(K,C0) + np.dot(C0,K.T)
-#        siga = np.dot(K,C0)
-#        sigb = np.dot(C0,K.T) # = np.dot(K,C0.T).T
-#        sig1 = siga + sigb
+    del K
 
     ###########################################################
     # diagonal of G
@@ -50,8 +48,6 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
                 g_mtx[:,list(vir[i])][:,:,list(vir[i])])
         g_rqpr = np.einsum('rqpr->pq', \
                 g_mtx[list(occ[i])][...,list(occ[i])])
-#            g_pqqq = np.einsum('pqqq->pq',g_mtx[list(occ[i])][:,list(vir[i])][:,:,list(vir[i])][...,list(vir[i])])
-#            g_pqpp = np.einsum('pqpp->pq',g_mtx)
         g_tmp = g_rrpq + g_pqrr + g_prrq - g_rqpr
         G[i][jlist] += np.array([g_tmp[k] for k in aclist[i]]) \
                     * np.array(signlist[i])
@@ -69,6 +65,7 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
             g_tmp0 = [g_mtx[k] for k in d]
             G[i][kl] += np.array(g_tmp0) * np.array(ssign)
     sig += 0.5 * (np.dot(G,C0) + np.dot(C0,G.T))    #########to be replaced
+    del G
     #==================
     E_pq = np.zeros([no,no,ns,ns])
     for ia, p in enumerate(occ):
@@ -77,25 +74,22 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         for j_index, pq in enumerate(aclist[ia]):
             p, q=pq
             E_pq[p,q,ia,jl[j_index]] = signlist[ia][j_index]
-    D_pq = np.zeros([no,no,ns,ns])
-    for p in xrange(no):
-        for q in xrange(no):
-            D_pq[p,q] = np.dot(E_pq[p,q], C0)
+    D_pq = np.einsum('pqij,jk->pqik',E_pq,C0)
+    del E_pq
     G_pq = np.zeros([no,no,ns,ns])
     for ib, rlist in enumerate(occ):
         g_tmppq = np.einsum('pqrr->pq', \
                 g_mtx[:,:,rlist][...,rlist])
         G_pq[:,:,ib,ib] = g_tmppq
+    del g_tmppq
     for ib, jl in enumerate(Jlist):
         for j_index, rs in enumerate(aclist[ib]):
             r, s = rs
             G_pq[:,:,ib,jl[j_index]] = g_mtx[:,:,r,s] \
                     * signlist[ib][j_index]
-    sig22pq = np.zeros([no,no,ns,ns])
-    for p in xrange(no):
-        for q in xrange(no):
-            sig22pq[p,q] = np.dot(D_pq[p,q],G_pq[p,q].T)
-    sig += np.einsum('pqij->ij',sig22pq)
+    sig22pq = np.einsum('pqij,pqkj->ik',D_pq,G_pq)
+#    sig += np.einsum('pqij->ij',sig22pq)
+    sig += sig22pq
     result = sig.reshape(-1,1)
     #-----------------------------------------------------------------------
     return result 
@@ -113,9 +107,9 @@ def make_hdiag(k_mtx, g_mtx, N, string_data):
             avir = list(vir[ai])
             bocc = list(bo)
             bvir = list(vir[bi])
-            e1 = k_mtx[aocc,aocc].sum() + k_mtx[bocc,bocc].sum()
-            e2 = diagj[aocc][:,aocc].sum() + diagj[aocc][:,bocc].sum() \
-               + diagj[bocc][:,aocc].sum() + diagj[bocc][:,bocc].sum() \
-               + diagk[aocc][:,avir].sum() + diagk[bocc][:,bvir].sum()
+            e1 = np.einsum('i->',k_mtx[aocc,aocc]) + np.einsum('i->',k_mtx[bocc,bocc])
+            e2 = np.einsum('ij->',diagj[aocc][:,aocc]) + np.einsum('ij->',diagj[aocc][:,bocc]) \
+               + np.einsum('ij->',diagj[bocc][:,aocc]) + np.einsum('ij->',diagj[bocc][:,bocc]) \
+               + np.einsum('ij->',diagk[aocc][:,avir]) + np.einsum('ij->',diagk[bocc][:,bvir])
             hdiag.append(e1 + e2*.5)
     return np.array(hdiag)

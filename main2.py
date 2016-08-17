@@ -5,7 +5,7 @@ R = 1.1
 mol = gto.Mole()
 mol.build(
         atom = 'Li 0 0 0; Li 0 0 '+str(R), 
-        basis = 'sto-3g',
+        basis = '6-31g',
         symmetry = True,
         )
 
