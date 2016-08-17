@@ -62,18 +62,19 @@ def FCI(mol):
     HD = make_hdiag(k_mtx,g_mtx,N,string_data)
     print 'H0 matrix done.'
     #---------------------------------------------------------
-    L = 1           #number of initial guess basis vectors
     K = 0           #ground state
-    B = np.matrix(np.eye(ns*ns,L))
+    B = np.zeros(ns*ns)
+    B[0] = 1.0
+    B = B.reshape(-1,1)
     #for i in xrange(L):
     #    AB = np.matrix(HC(np.array(B[:,i].reshape(ns,ns)), k_mtx, g_mtx, ne, no, ns, Z, occu)).reshape(ns*ns,-1)
     #print AB
     AB = HC(B, k_mtx, g_mtx, N, string_data)
-    A = B.T * AB
+    A = np.dot(B.T, AB)
     HD[0] += abs(HD[0]*0.001)
     
-    dt = np.matrix(np.eye(ns*ns))
-    dt[range(L),range(L)] -= 1
+    dt = np.eye(ns*ns)
+    dt[0,0] -= 1.0
 
     e, c = np.linalg.eigh(A)
     idx = e.argsort()[K]
@@ -90,13 +91,14 @@ def FCI(mol):
     ######################################################################
     print 'Now start iteration...'
     start_davidson = time.time()
-    for M in xrange(L, iter_limit):
-        q = (AB - ek * B) * ck
+    for M in xrange(1, iter_limit):
+        q = np.dot((AB - ek * B), ck)
         #D.
-        epsi = np.matrix(np.diag((ek - HD) ** (-1))) * q
+        epsi = (ek - HD) ** (-1) * q.reshape(-1)
+        epsi = epsi.reshape(-1,1)
         del q
         #E.
-        d = dt * epsi
+        d = np.dot(dt, epsi)
         del epsi
         res = np.linalg.norm(d)
         print 'res =', res
@@ -111,12 +113,12 @@ def FCI(mol):
         #G.
         AB = np.c_[AB, HC(b, k_mtx, g_mtx, N, string_data)]
         #H.
-        a = B.T * AB[:,M]
+#        a = np.dot(B.T, AB[:,M]).reshape(-1,1)
+        a = np.dot(B.T, AB[:,M]).reshape(-1,1)
         A = np.c_[A,a[:M,0]]
         A = np.r_[A,a.T]
         print A.shape
         dt = dt - b * b.T
-
         e, c = np.linalg.eigh(A)
         idx = e.argsort()[K]
         ek = e[idx]
