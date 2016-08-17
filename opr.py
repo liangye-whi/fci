@@ -60,5 +60,5 @@ def construct_string_data(N):
             s_list.append(sign(spstr[i],spstr[j]))
         signlist.append(s_list)
 
-    return occ, vir, spstr, sps2i, aclist, Jlist, signlist
+    return occ, vir, aclist, Jlist, signlist
 

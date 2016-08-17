@@ -17,7 +17,7 @@ from pdb import set_trace as stop
 
 def HC(Cx, k_mtx, g_mtx, N, string_data):
     ne,no,ns = N
-    occ,vir,spstr,sps2i,aclist,Jlist,signlist = string_data
+    occ,vir,aclist,Jlist,signlist = string_data
     # unpacking
     result = np.matrix(np.zeros(Cx.shape))
 
@@ -103,13 +103,13 @@ def HC(Cx, k_mtx, g_mtx, N, string_data):
         sig22 = np.einsum('pqij->ij',sig22pq)
 
         sig = sig1 + sig21 + sig22
-    result[:,clm] = np.matrix(sig).reshape(ns*ns,1)
+        result[:,clm] = np.matrix(sig).reshape(ns*ns,1)
     #-----------------------------------------------------------------------
     return result 
 
 def make_hdiag(k_mtx, g_mtx, N, string_data):
     ne, no, ns = N
-    occ,vir,spstr,sps2i,aclist,Jlist,signlist = string_data
+    occ,vir,aclist,Jlist,signlist = string_data
 
     diagj = np.einsum('iijj->ij',g_mtx)
     diagk = np.einsum('ijji->ij',g_mtx)

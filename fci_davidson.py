@@ -94,7 +94,6 @@ def FCI(mol):
         q = (AB - ek * B) * ck
         #D.
         epsi = np.matrix(np.diag((ek - HD) ** (-1))) * q
-        epsi = np.matrix(np.diag((ek - HD) ** (-1))) * q
         #E.
         d = dt * epsi
         res = np.linalg.norm(d)
