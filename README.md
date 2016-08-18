@@ -1,7 +1,7 @@
 Full-CI programming
 =====================
 
-Version 5.2
+Version 5.3
 -----------
 
 #### New Features
@@ -10,11 +10,11 @@ Version 5.2
 
 - Accelerate the matrix multipication with matrix operations.
 
-- Rewrite the diagonal elements HD calc
+- Rewrite the diagonal elements HD calc.
 
-- Detailed optimization.
+- Detailed optimization. Faster Davidson.
 
-- Now is able to calc Li2 sto3g
+- Now is able to calc Li2 6-31g level
 
 Instructions
 -----------
