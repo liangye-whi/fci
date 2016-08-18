@@ -34,6 +34,7 @@ def FCI(mol):
     ns = math_C(no,ne)
     N = (ne,no,ns)
     string_data = construct_string_data(N)
+    occ,vir,aclist,Jlist,signlist = string_data
     print 'ne =', ne, 'no =', no, 'ns =', ns
 
     ###########################################################
@@ -53,7 +54,76 @@ def FCI(mol):
     k_mtx = k_mtx + h_mtx
     del h_mtx
     print 'k matrix done.'
+    #=========================================================
 
+    # diagonal of K
+    K_MOC = np.diag([np.einsum('i->',k_mtx[i,i]) for i in occ])
+    # off-diagonal of K
+    for i,jlist in enumerate(Jlist): # j is a list
+        K_MOC[i][jlist] = np.array([k_mtx[k] for k in aclist[i]]) \
+                    * np.array(signlist[i])
+    #------
+
+    g_tmp = np.einsum('iijj->ij',g_mtx)
+    G_MOC = np.diag([np.einsum('ij->',g_tmp[list(i)][:,list(i)]) \
+            for i in occ])
+    g_tmp = np.einsum('ijji->ij',g_mtx)
+    G_MOC += np.diag([np.einsum('ij->', \
+            g_tmp[list(occ[i])][:,list(vir[i])]) \
+            for i in xrange(ns)])
+    # off-diagonal of G
+    for i,jlist in enumerate(Jlist):
+        g_rrpq = np.einsum('rrpq->pq', \
+                g_mtx[list(occ[i])][:,list(occ[i])])
+        g_pqrr = np.einsum('pqrr->pq', \
+                g_mtx[:,:,list(occ[i])][...,list(occ[i])])
+        g_prrq = np.einsum('prrq->pq', \
+                g_mtx[:,list(vir[i])][:,:,list(vir[i])])
+        g_rqpr = np.einsum('rqpr->pq', \
+                g_mtx[list(occ[i])][...,list(occ[i])])
+        g_tmp = g_rrpq + g_pqrr + g_prrq - g_rqpr
+        G_MOC[i][jlist] += np.array([g_tmp[k] for k in aclist[i]]) \
+                    * np.array(signlist[i])
+    del g_tmp
+    for i,jl in enumerate(Jlist):
+        for j_index,j in enumerate(jl):
+            #----
+            ijindex = Jlist[j].index(i)
+            kl = Jlist[j][:]
+            d = [aclist[i][j_index]+k for k in aclist[j]]
+            ssign = list(signlist[i][j_index] \
+                    * np.array(signlist[j]))
+            for k, kac in enumerate(d):
+                if len(set(kac)) < 4:
+                    ssign[k] = 0
+            g_tmp0 = [g_mtx[k] for k in d]
+            G_MOC[i][kl] += np.array(g_tmp0) * np.array(ssign)
+    
+    #--------
+    
+    E_pq = np.zeros([no,no,ns,ns])
+    for ia, p in enumerate(occ):
+        E_pq[p,p,ia,ia] = 1
+    for ia, jl in enumerate(Jlist):
+        for j_index, pq in enumerate(aclist[ia]):
+            p, q=pq
+            E_pq[p,q,ia,jl[j_index]] = signlist[ia][j_index]
+    
+    #--------
+
+    G_pq = np.zeros([no,no,ns,ns])
+    for ib, rlist in enumerate(occ):
+        g_tmppq = np.einsum('pqrr->pq', \
+                g_mtx[:,:,rlist][...,rlist])
+        G_pq[:,:,ib,ib] = g_tmppq
+    del g_tmppq
+    for ib, jl in enumerate(Jlist):
+        for j_index, rs in enumerate(aclist[ib]):
+            r, s = rs
+            G_pq[:,:,ib,jl[j_index]] = g_mtx[:,:,r,s] \
+                    * signlist[ib][j_index]
+
+    #=========================================================
     #---------------------------------------------------------
 
     start_HD_time = time.time()
@@ -65,7 +135,7 @@ def FCI(mol):
     B = np.zeros(ns*ns)
     B[0] = 1.0
     B = B.reshape(-1,1)
-    AB = HC(B, k_mtx, g_mtx, N, string_data)
+    AB = HC(B, k_mtx, g_mtx, K_MOC, G_MOC, E_pq, G_pq, N, string_data)
     A = np.dot(B.T, AB)
     HD[0] += abs(HD[0]*0.001)
     
@@ -84,43 +154,38 @@ def FCI(mol):
     print 'Now start iteration...'
     start_davidson = time.time()
     for M in xrange(1, iter_limit):
-        q = np.dot((AB - ek * B), ck)
+        b = np.dot((AB - ek * B), ck)
         #D.
-        epsi = (ek - HD) ** (-1) * q.reshape(-1)
-        epsi = epsi.reshape(-1,1)
-        del q
+        b = (ek - HD) ** (-1) * b.reshape(-1)
+        b.shape = (-1,1)
         #E.
-        d = epsi - np.einsum('i,ji->j', np.dot(epsi.T, B).reshape(-1), B).reshape(-1,1)
-        del epsi
-        res = np.linalg.norm(d)
+        b = b - np.einsum('i,ji->j', np.dot(b.T, B).reshape(-1), B).reshape(-1,1)
+        # orthogonalization
+        res = np.linalg.norm(b)
         print 'res =', res
         if res < crt: 
             print 'Iteration Converged.'
             break
-
-        b = d / res
-        del d
+        b /= res
         #F.
         B = np.c_[B,b]
         #G.
-        AB = np.c_[AB, HC(b, k_mtx, g_mtx, N, string_data)]
+        AB = np.c_[AB, HC(b, k_mtx, g_mtx, K_MOC, G_MOC, E_pq, G_pq, N, string_data)]
         #H.
         a = np.dot(B.T, AB[:,M]).reshape(-1,1)
         A = np.c_[A,a[:M,0]]
         A = np.r_[A,a.T]
-        del a
         print A.shape
         e, c = np.linalg.eigh(A)
         idx = e.argsort()[K]
         ek = e[idx]
         ck = c[:,idx]
-        print 'E =',ek
+        print('E = %.12f' % (ek))
 
     else:
         print 'Iteration Max (',iter_limit,'). Unconverged.'
     end_davidson = time.time()
     print 'HD time =', end_HD_time - start_HD_time, 'seconds.'
     print 'Davidson time =', end_davidson - start_davidson, 'seconds.'
-    #End of while 1
     #-----------------------------------------------------------------------
     return ek
