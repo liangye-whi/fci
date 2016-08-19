@@ -1,5 +1,5 @@
 from pyscf import gto, scf, fci
-from fci_davidson import FCI
+from davidson import FCI
 
 R = 1.1
 mol = gto.Mole()
