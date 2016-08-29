@@ -4,8 +4,8 @@ from davidson import FCI
 R = 1.1
 mol = gto.Mole()
 mol.build(
-        atom = 'C 0 0 0; C 0 0 '+str(R), 
-        basis = 'ccpvdz',
+        atom = 'H 0 0 0; F 0 0 '+str(R), 
+        basis = '6-31g',
         symmetry = True,
         )
 

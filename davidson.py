@@ -52,59 +52,39 @@ def FCI(mol):
     del h_mtx
     #---------------------------------------------------------
     K = 0           #ground state
-    B = np.zeros(ns*ns)
-    B[0] = 1.0
-    B = B.reshape(-1,1)
-    AB = HC(B, k_mtx, g_mtx, K_MOC, G_MOC, E_pq, G_pq, N, string_data)
-    A = np.dot(B.T, AB)
-    HD[0] += abs(HD[0]*0.001)
-    
-    e, c = np.linalg.eigh(A)
-    idx = e.argsort()[K]
-    ek = e[idx]
-    ck = c[:,idx]
-    print 'E =',ek
-    
-    #===criterion of convergence===
-    crt = 1e-8
-    #==============================
-    iter_num = 0
-    iter_limit = 100
-    ######################################################################
-    print 'Now start iteration...'
-    start_davidson = time.time()
-    for M in xrange(1, iter_limit):
-        b = np.dot((AB - ek * B), ck)
-        #D.
-        b = (ek - HD) ** (-1) * b.reshape(-1)
-        b.shape = (-1,1)
-        #E.
-        b = b - np.einsum('i,ji->j', np.dot(b.T, B).reshape(-1), B).reshape(-1,1)
-        # orthogonalization
-        res = np.linalg.norm(b)
-        print 'res =', res
-        if res < crt: 
-            print 'Iteration Converged.'
-            break
-        b /= res
-        #F.
-        B = np.c_[B,b]
-        #G.
-        AB = np.c_[AB, HC(b, k_mtx, g_mtx, K_MOC, G_MOC, E_pq, G_pq, N, string_data)]
-        #H.
-        a = np.dot(B.T, AB[:,M]).reshape(-1,1)
-        A = np.c_[A,a[:M,0]]
-        A = np.r_[A,a.T]
-        print A.shape
-        e, c = np.linalg.eigh(A)
-        idx = e.argsort()[K]
-        ek = e[idx]
-        ck = c[:,idx]
-        print('E = %.12f' % (ek))
+    #E = np.eye(ns*ns)
+    #H_mtx = np.zeros([ns*ns,1])
+    #for i in xrange(ns):
+    #    for j in xrange(ns):
+    #        B = np.zeros(ns*ns)
+    #        B[i*ns + j] = 1.0
+    #        B = B.reshape(-1,1)
 
-    else:
-        print 'Iteration Max (',iter_limit,'). Unconverged.'
-    end_davidson = time.time()
-    print 'Davidson time =', end_davidson - start_davidson, 'seconds.'
+    #        AB = HC(B, k_mtx, g_mtx, K_MOC, G_MOC, E_pq, G_pq, N, string_data)
+    #        A = np.dot(E.T, AB)
+    #        H_mtx = np.c_[H_mtx,A]
+    #H_mtx = H_mtx[:,1:]
+    #np.set_printoptions(threshold='nan')
+    #print H_mtx
+    #print H_mtx.shape
+    i, j = 0,0
+    p, q = 20,0
+    print string_data[0]
+    print string_data[0][i]
+    print string_data[0][j]
+    print string_data[0][p]
+    print string_data[0][q]
+    print 'k', k_mtx[1,9]
+    print 'g', .5*(g_mtx[3,1,9,2]+g_mtx[3,2,9,1])
+    B = np.zeros(ns*ns)
+    B[i*ns + j] = 1.0
+    B = B.reshape(-1,1)
+    E = np.zeros(ns*ns)
+    E[p*ns + q] = 1.0
+    E = E.reshape(-1,1)
+    AB = HC(B, k_mtx, g_mtx, K_MOC, G_MOC, E_pq, G_pq, N, string_data)
+    A = np.dot(E.T, AB)
+    print A
+#    e, c = np.linalg.eigh(H_mtx)
     #-----------------------------------------------------------------------
-    return ek
+    return 0
